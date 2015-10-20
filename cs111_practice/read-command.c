@@ -1034,7 +1034,7 @@ make_command_stream (int (*get_next_byte) (void *),
                     checkIfOperatorsHaveOperands(buffer_no_whitespaces);
                     validParentheses(buffer_no_whitespaces);
                     
-                    
+                    /*
                     int i;
                      for (i= 0; i<numChars; i++){
                      printf("%c", buffer_no_whitespaces[i]);
@@ -1042,7 +1042,7 @@ make_command_stream (int (*get_next_byte) (void *),
                      
                      //this just separates commands
                      printf("\n");
-                    
+                    */
                     
                     commandNode_t root = createNodeFromCommand(make_command_tree(buffer_no_whitespaces));
                     addNodeToStream(theStream, root);
@@ -1167,7 +1167,7 @@ make_command_stream (int (*get_next_byte) (void *),
     checkIfOperatorsHaveOperands(buffer_no_whitespaces);
     validParentheses(buffer_no_whitespaces);
     
-    
+    /*
      if (buffer_no_whitespaces[0] != '\0') {
          int i;
      for (i= 0; i<numChars; i++){
@@ -1175,9 +1175,13 @@ make_command_stream (int (*get_next_byte) (void *),
      }
      printf("\n");
      }
+    */
     
+    //make sure buffer_no_whitespace is not empty
+    if (buffer_no_whitespaces[0] != '\0') {
     commandNode_t root = createNodeFromCommand(make_command_tree(buffer_no_whitespaces));
     addNodeToStream(theStream, root);
+    }
     
     free(buffer);
     free(buffer_no_whitespaces);
