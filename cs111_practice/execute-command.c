@@ -67,13 +67,13 @@ void
 execute_command (command_t c, int time_travel)
 {
     
-    pid_t pid = fork();
+    pid_t pid;
     
     switch (c->type) {
             
         case SIMPLE_COMMAND:
             
-            
+            pid = fork();
             
             if (pid == -1) { //error in fork()
                 fprintf(stderr, "Error in fork()!");
@@ -93,17 +93,20 @@ execute_command (command_t c, int time_travel)
             else {  //this is the parent
                 int status;
                 //wait for child to exit
-                while (-1 == waitpid(pid, &status, 0))
-                    printf("Child has not exited yet! WIFEXITED returns %d\n", WIFEXITED(status));
-                printf("WIFEXITED returns %d\n", WIFEXITED(status));
-                if (WIFEXITED(status)) {
-                    printf("first child exited with %u\n", WEXITSTATUS(status));
-                    c->status = status;
+                while (-1 == waitpid(pid, &status, 0)){
+                    
                 }
+                   // printf("Child has not exited yet! WIFEXITED returns %d\n", WIFEXITED(status));
+                //printf("WIFEXITED returns %d\n", WIFEXITED(status));
+                //if (WIFEXITED(status)) {
+                   // printf("first child exited with %u\n", WEXITSTATUS(status));
+                if (WIFEXITED(status))
+                    c->status = WEXITSTATUS(status);
+                
             }
             
             break;
-        case AND_COMMAND:{
+        case AND_COMMAND:
             
             //execute first command in array
             execute_command(c->u.command[0], time_travel);
@@ -113,11 +116,11 @@ execute_command (command_t c, int time_travel)
             if (c->status == 0){
                 execute_command(c->u.command[1], time_travel);
                 c->status = c->u.command[1]->status;
-            }
             
+            }
             break;
-        }
-        case OR_COMMAND:{
+    
+        case OR_COMMAND:
             //execute first command in array
             execute_command(c->u.command[0], time_travel);
             c->status = c->u.command[0]->status;
@@ -129,7 +132,6 @@ execute_command (command_t c, int time_travel)
             }
             
             break;
-        }
         case SEQUENCE_COMMAND:
             //recursively call both commands
             execute_command(c->u.command[0], time_travel);
@@ -137,7 +139,6 @@ execute_command (command_t c, int time_travel)
             
             execute_command(c->u.command[1], time_travel);
             c->status = c->u.command[1]->status;
-            
             
             break;
         case PIPE_COMMAND:
@@ -157,6 +158,8 @@ execute_command (command_t c, int time_travel)
             break;
             
         case SUBSHELL_COMMAND:
+            
+            execute_command(c->u.subshell_command, time_travel);
             
             break;
             
