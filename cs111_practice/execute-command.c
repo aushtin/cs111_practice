@@ -68,6 +68,7 @@ execute_command (command_t c, int time_travel)
 {
     
     pid_t pid;
+    int fildes[2];
     
     switch (c->type) {
             
@@ -142,18 +143,41 @@ execute_command (command_t c, int time_travel)
             
             break;
         case PIPE_COMMAND:
-            if (pid == -1) { //error in fork()
-                fprintf(stderr, "Error in fork()!");
-                exit(1);
-            } else if (pid == 0) { //we are in the child process; execute simple command here
-                
-                
-                handle_IO(c);
-                
-                execvp(c->u.word[0], c->u.word);
-                
+            /*
+             int pipe(int fildes[2]);
+             
+            The pipe() function shall create a pipe and place two file descriptors, one each into the arguments fildes[0] and fildes[1], that refer to the open file descriptions for the read and write ends of the pipe.
+             
+             Upon successful completion, 0 shall be returned; otherwise, -1 shall be returned and errno set to indicate the error.
+            */
+            
+            //make a pipe, check for successful creation
+            if (pipe(fildes) == -1){
+                //error(1, 0, "Cannot create pipe.");
             }
             
+            pid = fork();
+            
+            if (pid == -1) { //error in fork()
+                fprintf(stderr, "Error in fork() for PIPE_COMMAND!");
+                exit(1);
+            } else if (pid == 0) { //child
+                
+                //close the READ portion (first element), then go on to check WRITE element
+                close(fildes[0]);
+                
+                //dup2 to check to see if we can write to pipe
+                if (dup2(fildes[1],1) == -1){
+                    //error(1, 0, "Cannot write to pipe.");
+                }
+                
+                execute_command(c->u.command[0], time_travel);
+                c->status = c->u.command[0]->status;
+                
+                close(fildes[1]);
+            } else if (pid > 0) { //parent
+                       
+            }
             
             break;
             
