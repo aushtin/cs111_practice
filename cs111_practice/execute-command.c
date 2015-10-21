@@ -86,8 +86,7 @@ execute_command (command_t c, int time_travel)
                 handle_IO(c);
                 
                 execvp(c->u.word[0], c->u.word);
-                
-                
+        
             }
             
             
@@ -132,10 +131,28 @@ execute_command (command_t c, int time_travel)
             break;
         }
         case SEQUENCE_COMMAND:
+            //recursively call both commands
+            execute_command(c->u.command[0], time_travel);
+            //c->status = c->u.command[0]->status;
+            
+            execute_command(c->u.command[1], time_travel);
+            c->status = c->u.command[1]->status;
             
             
             break;
         case PIPE_COMMAND:
+            if (pid == -1) { //error in fork()
+                fprintf(stderr, "Error in fork()!");
+                exit(1);
+            } else if (pid == 0) { //we are in the child process; execute simple command here
+                
+                
+                handle_IO(c);
+                
+                execvp(c->u.word[0], c->u.word);
+                
+            }
+            
             
             break;
             
