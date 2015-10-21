@@ -403,7 +403,7 @@ commandNode_t combine_commands(commandNode_t operator, commandNode_t top_operand
 //////////////////////COMMAND STREAM/////////////////////
 // command_stream is a linked list of commandNodes     //
 
-typedef struct command_stream *command_stream_t;
+//typedef struct command_stream *command_stream_t;
 
 //plant a tree. soon it will become part of a forest
 command_t make_command_tree(char *complete_command){

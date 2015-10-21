@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 int
 command_status (command_t c)
@@ -66,13 +67,13 @@ void
 execute_command (command_t c, int time_travel)
 {
     
-    pid_t pid;
+    pid_t pid = fork();
     
     switch (c->type) {
             
         case SIMPLE_COMMAND:
             
-            pid = fork();
+            
             
             if (pid == -1) { //error in fork()
                 fprintf(stderr, "Error in fork()!");
@@ -81,22 +82,47 @@ execute_command (command_t c, int time_travel)
             
             else if (pid == 0) { //we are in the child process; execute simple command here
                 
+                
                 handle_IO(c);
+                
                 execvp(c->u.word[0], c->u.word);
                 
                 
             }
             
-            else {   //this is the parent process
                 
-                //do nothing
+            else {  //this is the parent
                 int status;
-                waitpid(pid, &status, WUNTRACED);
-                c->status = status;
-                printf("the command %s exited with code %d", c->u.word[0], c->status);
+                //wait for child to exit
+                while (-1 == waitpid(pid, &status, 0))
+                    printf("Child has not exited yet! WIFEXITED returns %d\n", WIFEXITED(status));
+                printf("WIFEXITED returns %d\n", WIFEXITED(status));
+                if (WIFEXITED(status)) {
+                    printf("first child exited with %u\n", WEXITSTATUS(status));
+                    c->status = status;
+                }
             }
             
+            break;
+        case AND_COMMAND:
+            break;
+        case OR_COMMAND:
+            break;
+        case SEQUENCE_COMMAND:
             
+            
+            break;
+        case PIPE_COMMAND:
+            
+            break;
+            
+        case SUBSHELL_COMMAND:
+            
+            break;
+            
+        default:
+            fprintf(stderr, "command is somehow invalid");
+            exit(1);
             break;
             
             
