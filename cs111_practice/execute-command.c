@@ -82,6 +82,7 @@ execute_command (command_t c, int time_travel)
             
             else if (pid == 0) { //we are in the child process; execute simple command here
                 
+                
                 handle_IO(c);
                 
                 execvp(c->u.word[0], c->u.word);
@@ -89,7 +90,7 @@ execute_command (command_t c, int time_travel)
                 
             }
             
-                
+            
             else {  //this is the parent
                 int status;
                 //wait for child to exit
@@ -98,19 +99,38 @@ execute_command (command_t c, int time_travel)
                 printf("WIFEXITED returns %d\n", WIFEXITED(status));
                 if (WIFEXITED(status)) {
                     printf("first child exited with %u\n", WEXITSTATUS(status));
-                    c->status = WEXITSTATUS(status);
+                    c->status = status;
                 }
             }
             
             break;
-        case AND_COMMAND:
+        case AND_COMMAND:{
             
-            //recursively call execute_command on all
+            //execute first command in array
+            execute_command(c->u.command[0], time_travel);
+            c->status = c->u.command[0]->status;
             
+            //execute second command in array if first one exits 0 (i.e. true)
+            if (c->status == 0){
+                execute_command(c->u.command[1], time_travel);
+                c->status = c->u.command[1]->status;
+            }
             
             break;
-        case OR_COMMAND:
+        }
+        case OR_COMMAND:{
+            //execute first command in array
+            execute_command(c->u.command[0], time_travel);
+            c->status = c->u.command[0]->status;
+            
+            //if first command isn't true, check second one
+            if (c->status != 0){
+                execute_command(c->u.command[1], time_travel);
+                c->status = c->u.command[1]->status;
+            }
+            
             break;
+        }
         case SEQUENCE_COMMAND:
             
             
