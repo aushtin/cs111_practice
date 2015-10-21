@@ -82,7 +82,6 @@ execute_command (command_t c, int time_travel)
             
             else if (pid == 0) { //we are in the child process; execute simple command here
                 
-                
                 handle_IO(c);
                 
                 execvp(c->u.word[0], c->u.word);
@@ -99,12 +98,16 @@ execute_command (command_t c, int time_travel)
                 printf("WIFEXITED returns %d\n", WIFEXITED(status));
                 if (WIFEXITED(status)) {
                     printf("first child exited with %u\n", WEXITSTATUS(status));
-                    c->status = status;
+                    c->status = WEXITSTATUS(status);
                 }
             }
             
             break;
         case AND_COMMAND:
+            
+            //recursively call execute_command on all
+            
+            
             break;
         case OR_COMMAND:
             break;
