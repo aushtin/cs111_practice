@@ -186,14 +186,11 @@ execute_command (command_t c, int time_travel)
                 
                 int status;
                 
-                /*
-                WARNING: Do we do the same thing as in SIMPLE COMMAND, or can we use
-                waitpid like we did here?
-                */
-                
                 //wait for child to ext
-                waitpid(pid, &status, 0);
-                
+                while (-1 == waitpid(pid, &status, 0)){}
+
+                if (WIFEXITED(status))
+                    c->status = WEXITSTATUS(status);
                 
                 //close the WRITE portion
                 close(fildes[1]);
