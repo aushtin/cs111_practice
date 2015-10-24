@@ -19,6 +19,10 @@ command_status (command_t c)
     return c->status;
 }
 
+typedef enum { false, true } bool;
+
+bool entered_first_fork = false;
+
 //check for inputs and outputs
 //if they exist, deal with them somehow
 void handle_IO(command_t c) {
@@ -67,13 +71,13 @@ void
 execute_command (command_t c, int time_travel)
 {
     
-    pid_t pid;
+    pid_t pid = 200;
     int fildes[2];
     
     switch (c->type) {
             
         case SIMPLE_COMMAND:
-            
+
             pid = fork();
             
             if (pid == -1) { //error in fork()
@@ -157,7 +161,10 @@ execute_command (command_t c, int time_travel)
                 exit(1);
             }
             
+            //if (entered_first_fork == false){
             pid = fork();
+            //    entered_first_fork = true;
+            //}
             
             if (pid == -1) { //error in fork()
                 fprintf(stderr, "Error in fork() for PIPE_COMMAND!");
@@ -184,6 +191,8 @@ execute_command (command_t c, int time_travel)
                 c->status = c->u.command[0]->status;
                 
                 close(fildes[1]);
+                
+                //entered_first_fork = false;
             } else if (pid > 0) { //parent
                 
                 int status;
@@ -206,6 +215,8 @@ execute_command (command_t c, int time_travel)
                 c->status = c->u.command[1]->status;
                 
                 close(fildes[0]);
+                
+                //entered_first_fork = true;
             } else {    //error
                 fprintf(stderr, "Couldn't create child process (PIPE).");
                 exit(1);
