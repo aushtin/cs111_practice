@@ -66,6 +66,8 @@ void handle_IO(command_t c) {
     
 }
 
+
+
 //what is time_travel?
 void
 execute_command (command_t c, int time_travel)
@@ -161,10 +163,8 @@ execute_command (command_t c, int time_travel)
                 exit(1);
             }
             
-            //if (entered_first_fork == false){
             pid = fork();
-            //    entered_first_fork = true;
-            //}
+
             
             if (pid == -1) { //error in fork()
                 fprintf(stderr, "Error in fork() for PIPE_COMMAND!");
@@ -183,6 +183,7 @@ execute_command (command_t c, int time_travel)
                 */
                 
                 if (dup2(fildes[1],1) == -1){
+
                     fprintf(stderr, "Cannot write to pipe");
                     exit(1);
                 }
@@ -191,16 +192,15 @@ execute_command (command_t c, int time_travel)
                 c->status = c->u.command[0]->status;
                 
                 close(fildes[1]);
+
+                exit(0);
                 
-                //entered_first_fork = false;
             } else if (pid > 0) { //parent
                 
                 int status;
                 
                 //wait for child to ext
                 while (-1 == waitpid(pid, &status, 0)){}
-                if (WIFEXITED(status))
-                    c->status = WEXITSTATUS(status);
                 
                 //close the WRITE portion
                 close(fildes[1]);
@@ -216,7 +216,6 @@ execute_command (command_t c, int time_travel)
                 
                 close(fildes[0]);
                 
-                //entered_first_fork = true;
             } else {    //error
                 fprintf(stderr, "Couldn't create child process (PIPE).");
                 exit(1);
