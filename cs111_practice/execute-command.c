@@ -153,7 +153,8 @@ execute_command (command_t c, int time_travel)
             
             //make a pipe, check for successful creation
             if (pipe(fildes) == -1){
-                //error(1, 0, "Cannot create pipe.");
+                fprintf(stderr, "Cannot create pipe.");
+                exit(1);
             }
             
             pid = fork();
@@ -175,7 +176,8 @@ execute_command (command_t c, int time_travel)
                 */
                 
                 if (dup2(fildes[1],1) == -1){
-                    //error(1, 0, "Cannot write to pipe.");
+                    fprintf(stderr, "Cannot write to pipe");
+                    exit(1);
                 }
                 
                 execute_command(c->u.command[0], time_travel);
@@ -188,7 +190,6 @@ execute_command (command_t c, int time_travel)
                 
                 //wait for child to ext
                 while (-1 == waitpid(pid, &status, 0)){}
-
                 if (WIFEXITED(status))
                     c->status = WEXITSTATUS(status);
                 
@@ -197,7 +198,8 @@ execute_command (command_t c, int time_travel)
                 
                 //check to see if we can use fildes[0] as input
                 if (dup2(fildes[0],0) == -1){
-                    //error(1, 0, "dup2() for parent failed.");
+                    fprintf(stderr, "dup2() for parent failed");
+                    exit(1);
                 }
                 
                 execute_command(c->u.command[1], time_travel);
@@ -205,7 +207,8 @@ execute_command (command_t c, int time_travel)
                 
                 close(fildes[0]);
             } else {    //error
-                //error(1, 0, "Couldn't create child process");
+                fprintf(stderr, "Couldn't create child process (PIPE).");
+                exit(1);
             }
             
             break;
