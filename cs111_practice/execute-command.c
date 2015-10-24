@@ -155,7 +155,8 @@ execute_command (command_t c, int time_travel)
             
             //make a pipe, check for successful creation
             if (pipe(fildes) == -1){
-                //error(1, 0, "Cannot create pipe.");
+                fprintf(stderr, "Cannot create pipe.");
+                exit(1);
             }
             
             pid = fork();
@@ -177,7 +178,8 @@ execute_command (command_t c, int time_travel)
                 */
                 
                 if (dup2(fildes[1],1) == -1){
-                    fprintf(stderr, "Cannot write to PIPE");
+
+                    fprintf(stderr, "Cannot write to pipe");
                     exit(1);
                 }
                 
@@ -207,9 +209,9 @@ execute_command (command_t c, int time_travel)
                 c->status = c->u.command[1]->status;
                 
                 close(fildes[0]);
-            
-            } else { //error
-                fprintf(stderr, "couldnt create child process (pipe)");
+                
+            } else {    //error
+                fprintf(stderr, "Couldn't create child process (PIPE).");
                 exit(1);
             }
             
