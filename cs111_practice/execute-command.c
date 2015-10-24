@@ -62,6 +62,8 @@ void handle_IO(command_t c) {
     
 }
 
+
+
 //what is time_travel?
 void
 execute_command (command_t c, int time_travel)
@@ -182,15 +184,14 @@ execute_command (command_t c, int time_travel)
                 c->status = c->u.command[0]->status;
                 
                 close(fildes[1]);
+                exit(0);
+                
             } else if (pid > 0) { //parent
                 
                 int status;
                 
                 //wait for child to ext
                 while (-1 == waitpid(pid, &status, 0)){}
-
-                if (WIFEXITED(status))
-                    c->status = WEXITSTATUS(status);
                 
                 //close the WRITE portion
                 close(fildes[1]);
@@ -204,7 +205,9 @@ execute_command (command_t c, int time_travel)
                 c->status = c->u.command[1]->status;
                 
                 close(fildes[0]);
-            } else {    //error
+            
+            } else {
+//error
                 //error(1, 0, "Couldn't create child process");
             }
             
