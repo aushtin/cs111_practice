@@ -28,13 +28,13 @@ void handle_IO(command_t c) {
         int input_fd;
         input_fd = open(c->input, O_RDONLY, 0666);
         if (input_fd < 0) {
-            fprintf(stderr, "Error in opening output file!");
+            fprintf(stderr, "%s: error opening input file\n", c->input);
             exit(1);
         }
         
         int dup_result = dup2(input_fd, 0);
         if (dup_result < 0) {
-            fprintf(stderr, "Error in dup2() for input!");
+            fprintf(stderr, "Error in dup2() for input %s!\n", c->input);
             exit(1);
         }
         
@@ -47,13 +47,13 @@ void handle_IO(command_t c) {
         output_fd = open(c->output, O_CREAT | O_WRONLY | O_TRUNC, 0666);
         
         if (output_fd < 0) {
-            fprintf(stderr, "Error in opening output file!");
+            fprintf(stderr, "%s: error opening output file", c->output);
             exit(1);
         }
         
         int dup_result = dup2(output_fd, 1);
         if (dup_result < 0) {
-            fprintf(stderr, "Error in dup2() for output!");
+            fprintf(stderr, "Error in dup2() for output %s\n", c->output);
             exit(1);
         }
         
@@ -70,8 +70,7 @@ execute_command (command_t c, int time_travel)
 {
     
     pid_t pid;
-    int fildes[2];
-    
+    int fildes[2];    
     switch (c->type) {
             
         case SIMPLE_COMMAND:
@@ -90,21 +89,29 @@ execute_command (command_t c, int time_travel)
                 
                 execvp(c->u.word[0], c->u.word);
                 
+                //error in finding file
+ 
+                fprintf(stderr, "%s: command not found\n", c->u.word[0]);
+                exit(1);
+                
             }
             
             
             else {  //this is the parent
                 int status;
                 //wait for child to exit
+                
                 while (-1 == waitpid(pid, &status, 0)){
-                    
+                //    printf("Child has not exited yet! WIFEXITED returns %d\n", WIFEXITED(status));
                 }
-                // printf("Child has not exited yet! WIFEXITED returns %d\n", WIFEXITED(status));
-                //printf("WIFEXITED returns %d\n", WIFEXITED(status));
-                //if (WIFEXITED(status)) {
-                // printf("first child exited with %u\n", WEXITSTATUS(status));
-                if (WIFEXITED(status))
+                /*
+                printf("WIFEXITED returns %d\n", WIFEXITED(status));
+                if (WIFEXITED(status)) {
+                 printf("first child exited with %u\n", status);*/
+                if (WIFEXITED(status)) {
                     c->status = WEXITSTATUS(status);
+                    //printf("Exit status for %s command: %d\n", c->u.word[0], c->status);
+                }
                 
             }
             
@@ -219,6 +226,8 @@ execute_command (command_t c, int time_travel)
             
         case SUBSHELL_COMMAND:
             
+            c->u.subshell_command->input=c->input;
+            c->u.subshell_command->output= c->output;
             execute_command(c->u.subshell_command, time_travel);
             
             break;
