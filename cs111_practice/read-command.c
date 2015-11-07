@@ -12,9 +12,6 @@
 /* FIXME: You may need to add #include directives, macro definitions,
  static function definitions, etc.  */
 
-//boolean
-typedef enum { false, true } bool;
-
 bool isValidChar(char character){
     if (isalpha(character) || isdigit(character) || character == '!' ||
         character == '%' || character == '+' || character == ',' ||
@@ -250,19 +247,13 @@ command_t createCommand(enum command_type new_cmd, char *command_string) {
 ///////////////////////COMMAND NODE///////////////////////////////
 //  command node is used in both the stack and the linked list. //
 
-typedef struct commandNode *commandNode_t;
-
-struct commandNode{
-    command_t cmd;
-    commandNode_t next;
-    commandNode_t prev;
-};
 
 commandNode_t createNode(enum command_type new_cmd){
     commandNode_t x = (commandNode_t) checked_malloc(sizeof(*x));
-    //x->cmd = createCommand(new_cmd);
     x->next = NULL;
     x->prev = NULL;
+    x->write_list = NULL;
+    x->read_list = NULL;
     return x;
 }
 
@@ -271,6 +262,8 @@ commandNode_t createNodeFromCommand(command_t new_command){
     x->cmd = new_command;
     x->next = NULL;
     x->prev = NULL;
+    x->write_list = NULL;
+    x->read_list = NULL;
     return x;
 }
 
@@ -1045,6 +1038,10 @@ make_command_stream (int (*get_next_byte) (void *),
                     */
                     
                     commandNode_t root = createNodeFromCommand(make_command_tree(buffer_no_whitespaces));
+                    write_list_t write_list = init_write_list();
+                    root->write_list = make_write_list(write_list, root->cmd);
+                    read_list_t read_list = init_read_list();
+                    root->read_list = make_read_list(read_list, root->cmd);
                     addNodeToStream(theStream, root);
                     
                     
@@ -1180,6 +1177,10 @@ make_command_stream (int (*get_next_byte) (void *),
     //make sure buffer_no_whitespace is not empty
     if (buffer_no_whitespaces[0] != '\0') {
     commandNode_t root = createNodeFromCommand(make_command_tree(buffer_no_whitespaces));
+    write_list_t write_list = init_write_list();
+    root->write_list = make_write_list(write_list, root->cmd);
+    read_list_t read_list = init_read_list();
+    root->read_list = make_read_list(read_list, root->cmd);
     addNodeToStream(theStream, root);
     }
     
