@@ -13,169 +13,253 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 
+/*
+Thoughts on how to implement time travel:
+ 
+Find files that are dependent
+    - look for input/output operators
+
+ Make dependency graph
+    - which commands are dependent on a previous command?
+ 
+Pseudocode:
+
+ Traverse each tree in order to find commands with inputs and outputs
+    Store these inputs/outputs in a data structure specific to each tree
+ Traverse rest of the trees, and do the same
+ Compare the input/output data structures of the trees
+    If we find two inputs/outputs are same in two commands, we have dependence
+        Increment number of dependencies for that specific input/output
+ Run non-dependent in parallel
+ execute dependent commands sequentially
+
+ 
+*/
+
 int
 command_status (command_t c)
 {
     return c->status;
 }
 
-typedef struct wnode *wnode_t;
+
+/////////////////////////////////////////////////////
+/////////////   WRITE NODE CODE    //////////////////
+/////////////////////////////////////////////////////
+
 
 struct wnode {
-    
     char* file_name;
     wnode_t next, prev;
-    
-    
 };
 
-wnode_t create_wnode(char* file_name) {
-    
-    wnode_t x = (wnode_t) checked_malloc(sizeof(*x));
-    x->file_name = file_name;
-    x->next = NULL;
-    x->prev = NULL;
-    return x;
-    
-}
-
-typedef struct write_list *write_list_t;
 
 struct write_list {
-    //head and tail pointers
     wnode_t head, tail;
-    
-    //just in case we need to look in the middle of the list
     wnode_t current;
-    
-    int tree_number;
 };
 
-write_list_t init_write_list(int tree_number){
+write_list_t init_write_list(){
     write_list_t new_write_list = (write_list_t) checked_malloc(sizeof(write_list_t));
     new_write_list->head = NULL;
     new_write_list->tail = NULL;
     new_write_list->current = NULL;
-    new_write_list->tree_number=tree_number;
     return new_write_list;
 }
 
-void add_wnode_to_list(write_list_t w_list, wnode_t new_node) {
+wnode_t create_wnode(char *file_name){
+    wnode_t x = (wnode_t) checked_malloc(sizeof(*x));
+    x->file_name = file_name;
+    x->prev = NULL;
+    x->next = NULL;
+    return x;
+}
+
+void add_wnode_to_list(wnode_t wnode, write_list_t write_list) {
     
-    if (w_list->head == NULL) {
-        w_list->head = new_node;
-        w_list->tail = new_node;
+    if (write_list->head == NULL) {
+        write_list->head = wnode;
+        write_list->tail = wnode;
     }
     
     else {
-        w_list->tail->next = new_node;
-        new_node->next=NULL;
-        new_node->prev=w_list->tail;
-        
-        w_list->tail = new_node;
-        
-        
+        write_list->tail->next = wnode;
+        wnode->next=NULL;
+        wnode->prev=write_list->tail;
+        write_list->tail = wnode;
     }
-    
 }
 
-write_list_t make_write_list(write_list_t w_list, command_t c, int tree_number) {
 
-    
-    if (c == NULL)
+write_list_t make_write_list(write_list_t w_list, command_t c){
+    if (!c){
         return NULL;
+    }
     
-    //if c->output is not NULL, there is a WRITE here
-    if (c->output != NULL) {
-        
+    //if c->output is not NULL, there is a write, add it
+    if (c->output){
         wnode_t new_write = create_wnode(c->output);
-        add_wnode_to_list(w_list, new_write);
-        
+        add_wnode_to_list(new_write, w_list);
     }
     
     switch (c->type) {
-            
         case AND_COMMAND:
-        case OR_COMMAND:
-        case PIPE_COMMAND:
         case SEQUENCE_COMMAND:
-            make_write_list(w_list, c->u.command[0], tree_number);
-            make_write_list(w_list, c->u.command[1], tree_number);
+        case OR_COMMAND:
+        case PIPE_COMMAND: {
+            make_write_list(w_list, c->u.command[0]);
+            make_write_list(w_list, c->u.command[1]);
             break;
+        }
         case SIMPLE_COMMAND:
             break;
-        case SUBSHELL_COMMAND:
-            make_write_list(w_list, c->u.subshell_command, tree_number);
+        case SUBSHELL_COMMAND: {
+            make_write_list(w_list, c->u.subshell_command);
             break;
+        }
         default:
             break;
-            
     }
     
     return w_list;
-    
 }
 
-typedef struct rnode *rnode_t;
+//Compares write_lists. If we find matching writes, then we return 1.
+//If there are no matching writes, return 0.
+bool compare_write_list (write_list_t write_list1, write_list_t write_list2){
+    if (write_list1 == NULL || write_list2 == NULL)
+        return false;
+    
+    //We use these variables to traverse through each write_list
+    wnode_t list1_curr_node = write_list1->head;
+    wnode_t list2_curr_node = write_list2->head;
+    
+    while (list1_curr_node != NULL){
+        while (list2_curr_node != NULL){
+            if (list1_curr_node->file_name == list2_curr_node->file_name){
+                return true;
+            }
+            
+            list2_curr_node = list2_curr_node->next;
+        }
+        
+        list1_curr_node = list1_curr_node->next;
+    }
+    
+    return false;
+}
+
+/////////////////////////////////////////////////////
+//////////////   READ NODE CODE    //////////////////
+/////////////////////////////////////////////////////
 
 struct rnode {
-    
     char* file_name;
     rnode_t next, prev;
-    
-    
 };
 
-rnode_t create_rnode(char* file_name) {
-    
-    rnode_t x = (rnode_t) checked_malloc(sizeof(*x));
-    x->file_name = file_name;
-    x->next = NULL;
-    x->prev = NULL;
-    return x;
-    
-}
-
-typedef struct read_list *read_list_t;
 
 struct read_list {
-    //head and tail pointers
     rnode_t head, tail;
-    
-    //just in case we need to look in the middle of the list
     rnode_t current;
-    
-    int tree_number;
 };
 
-read_list_t init_read_list(int tree_number){
+read_list_t init_read_list(){
     read_list_t new_read_list = (read_list_t) checked_malloc(sizeof(read_list_t));
     new_read_list->head = NULL;
     new_read_list->tail = NULL;
     new_read_list->current = NULL;
-    new_read_list->tree_number=tree_number;
     return new_read_list;
 }
 
-void add_rnode_to_list(read_list_t r_list, rnode_t new_node) {
+rnode_t create_rnode(char *file_name){
+    rnode_t x = (rnode_t) checked_malloc(sizeof(*x));
+    x->file_name = file_name;
+    x->prev = NULL;
+    x->next = NULL;
+    return x;
+}
+
+void add_rnode_to_list(rnode_t rnode, read_list_t read_list) {
     
-    if (r_list->head == NULL) {
-        r_list->head = new_node;
-        r_list->tail = new_node;
+    if (read_list->head == NULL) {
+        read_list->head = rnode;
+        read_list->tail = rnode;
     }
     
     else {
-        r_list->tail->next = new_node;
-        new_node->next=NULL;
-        new_node->prev=r_list->tail;
-        
-        r_list->tail = new_node;
-        
-        
+        read_list->tail->next = rnode;
+        rnode->next=NULL;
+        rnode->prev=read_list->tail;
+        read_list->tail = rnode;
     }
-    
 }
 
+read_list_t make_read_list(read_list_t r_list, command_t c){
+    if (!c){
+        return NULL;
+    }
+    
+    //if c->output is not NULL, there is a write, add it
+    if (c->input){
+        rnode_t new_read = create_rnode(c->output);
+        add_rnode_to_list(new_read, r_list);
+    }
+    
+    switch (c->type) {
+        case AND_COMMAND:
+        case SEQUENCE_COMMAND:
+        case OR_COMMAND:
+        case PIPE_COMMAND: {
+            make_read_list(r_list, c->u.command[0]);
+            make_read_list(r_list, c->u.command[1]);
+            break;
+        }
+        case SIMPLE_COMMAND:
+            break;
+        case SUBSHELL_COMMAND: {
+            make_read_list(r_list, c->u.subshell_command);
+            break;
+        }
+        default:
+            break;
+    }
+    
+    return r_list;
+}
+
+//Compares read_lists. If we find matching reads, then we return 1.
+//If there are no matching reads, return 0.
+bool compare_read_list (read_list_t read_list1, read_list_t read_list2){
+    if (read_list1 == NULL || read_list2 == NULL)
+        return false;
+    
+    //We use these variables to traverse through each write_list
+    rnode_t list1_curr_node = read_list1->head;
+    rnode_t list2_curr_node = read_list2->head;
+    
+    while (list1_curr_node != NULL){
+        while (list2_curr_node != NULL){
+            if (list1_curr_node->file_name == list2_curr_node->file_name){
+                return true;
+            }
+            
+            list2_curr_node = list2_curr_node->next;
+        }
+        
+        list1_curr_node = list1_curr_node->next;
+    }
+    
+    return false;
+}
+
+/////////////////////////////////////////////////////////////
+////////////////   DEPENDENCY TYPES    //////////////////////
+/////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////
+//////////////   EXECUTING COMMAND CODE    //////////////////
+/////////////////////////////////////////////////////////////
 
 //check for inputs and outputs
 //if they exist, deal with them somehow
@@ -220,9 +304,6 @@ void handle_IO(command_t c) {
     
 }
 
-
-
-
 //what is time_travel?
 void
 execute_command (command_t c, int time_travel)
@@ -230,7 +311,7 @@ execute_command (command_t c, int time_travel)
     
     
     pid_t pid;
-    int fildes[2];    
+    int fildes[2];
     switch (c->type) {
             
         case SIMPLE_COMMAND:
@@ -250,7 +331,6 @@ execute_command (command_t c, int time_travel)
                 execvp(c->u.word[0], c->u.word);
                 
                 //error in finding file
- 
                 fprintf(stderr, "%s: command not found\n", c->u.word[0]);
                 exit(1);
                 
@@ -262,11 +342,12 @@ execute_command (command_t c, int time_travel)
                 //wait for child to exit
                 
                 while (-1 == waitpid(pid, &status, 0)){
-                //    printf("Child has not exited yet! WIFEXITED returns %d\n", WIFEXITED(status));
+                    //    printf("Child has not exited yet! WIFEXITED returns %d\n", WIFEXITED(status));
                 }
                 /*
-                printf("WIFEXITED returns %d\n", WIFEXITED(status));
-                if (WIFEXITED(status)) {
+                 printf("WIFEXITED returns %d\n", WIFEXITED(status));
+                 if (WIFEXITED(status)) {
+
                  printf("first child exited with %u\n", status);*/
                 if (WIFEXITED(status)) {
                     c->status = WEXITSTATUS(status);
@@ -337,15 +418,15 @@ execute_command (command_t c, int time_travel)
                 close(fildes[0]);
                 
                 /*
-                dup2 to check to see if we can write to pipe
-                remember: file descriptors have the following integer values:
-                    0: for standard input
-                    1: for standard output
-                    2: for standard error
-                */
+                 dup2 to check to see if we can write to pipe
+                 remember: file descriptors have the following integer values:
+                 0: for standard input
+                 1: for standard output
+                 2: for standard error
+                 */
                 
                 if (dup2(fildes[1],1) == -1){
-
+                    
                     fprintf(stderr, "Cannot write to pipe");
                     exit(1);
                 }
@@ -396,7 +477,6 @@ execute_command (command_t c, int time_travel)
             fprintf(stderr, "command is somehow invalid");
             exit(1);
             break;
-            
             
     }
 }
