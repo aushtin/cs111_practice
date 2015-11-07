@@ -46,7 +46,6 @@ command_status (command_t c)
 //////////////////   WRITE NODE CODE    ///////////////////////
 ///////////////////////////////////////////////////////////////
 
-
 struct wnode {
     char* file_name;
     wnode_t next, prev;
@@ -351,6 +350,7 @@ void handle_IO(command_t c) {
 void
 execute_command (command_t c, int time_travel)
 {
+    
     
     pid_t pid;
     int fildes[2];

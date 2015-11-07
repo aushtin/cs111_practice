@@ -137,6 +137,7 @@ command_t createCommand(enum command_type new_cmd, char *command_string) {
     x->status = -1;
     x->input = 0;
     x->output = 0;
+    x->tree_number = 0;
     
     
     switch (new_cmd) {

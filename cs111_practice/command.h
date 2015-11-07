@@ -59,4 +59,3 @@ bool WAR_dependency(write_list_t tree2_write_list, read_list_t tree1_read_list);
 bool WAW_dependency(write_list_t tree2_write_list, write_list_t tree1_write_list);
 
 void free_command(command_t);
-
