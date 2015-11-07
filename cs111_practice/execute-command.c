@@ -42,9 +42,9 @@ command_status (command_t c)
     return c->status;
 }
 
-/////////////////////////////////////////////////////
-/////////////   WRITE NODE CODE    //////////////////
-/////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+//////////////////   WRITE NODE CODE    ///////////////////////
+///////////////////////////////////////////////////////////////
 
 
 struct wnode {
@@ -123,34 +123,9 @@ write_list_t make_write_list(write_list_t w_list, command_t c){
     return w_list;
 }
 
-//Compares write_lists. If we find matching writes, then we return 1.
-//If there are no matching writes, return 0.
-bool compare_write_list (write_list_t write_list1, write_list_t write_list2){
-    if (write_list1 == NULL || write_list2 == NULL)
-        return false;
-    
-    //We use these variables to traverse through each write_list
-    wnode_t list1_curr_node = write_list1->head;
-    wnode_t list2_curr_node = write_list2->head;
-    
-    while (list1_curr_node != NULL){
-        while (list2_curr_node != NULL){
-            if (list1_curr_node->file_name == list2_curr_node->file_name){
-                return true;
-            }
-            
-            list2_curr_node = list2_curr_node->next;
-        }
-        
-        list1_curr_node = list1_curr_node->next;
-    }
-    
-    return false;
-}
-
-/////////////////////////////////////////////////////
-//////////////   READ NODE CODE    //////////////////
-/////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+///////////////////   READ NODE CODE    ///////////////////////
+///////////////////////////////////////////////////////////////
 
 struct rnode {
     char* file_name;
@@ -256,9 +231,78 @@ bool compare_read_list (read_list_t read_list1, read_list_t read_list2){
 ////////////////   DEPENDENCY TYPES    //////////////////////
 /////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////
-//////////////   EXECUTING COMMAND CODE    //////////////////
-/////////////////////////////////////////////////////////////
+bool RAW_dependency(read_list_t tree2_read_list, write_list_t tree1_write_list){
+    if (tree2_read_list == NULL || tree1_write_list == NULL)
+        return false;
+    
+    //temp variables for iteration through lists
+    rnode_t tree2_curr_node = tree2_read_list->head;
+    wnode_t tree1_curr_node = tree1_write_list->head;
+    
+    while (tree2_curr_node != NULL){
+        while (tree1_curr_node != NULL){
+            if (tree2_curr_node->file_name == tree1_curr_node->file_name){
+                return true;
+            }
+            
+            tree1_curr_node = tree1_curr_node->next;
+        }
+        
+        tree2_curr_node = tree2_curr_node->next;
+    }
+    
+    return false;
+}
+
+bool WAR_dependency(write_list_t tree2_write_list, read_list_t tree1_read_list){
+    if (tree2_write_list == NULL || tree1_read_list == NULL)
+        return false;
+    
+    //temp variables for iteration through lists
+    wnode_t tree2_curr_node = tree2_write_list->head;
+    rnode_t tree1_curr_node = tree1_read_list->head;
+    
+    while (tree2_curr_node != NULL){
+        while (tree1_curr_node != NULL){
+            if (tree2_curr_node->file_name == tree1_curr_node->file_name){
+                return true;
+            }
+            
+            tree1_curr_node = tree1_curr_node->next;
+        }
+        
+        tree2_curr_node = tree2_curr_node->next;
+    }
+    
+    return false;
+}
+
+bool WAW_dependency(write_list_t tree2_write_list, write_list_t tree1_write_list){
+    if (tree2_write_list == NULL || tree1_write_list == NULL)
+        return false;
+    
+    //temp variables for iteration through lists
+    wnode_t tree1_curr_node = tree2_write_list->head;
+    wnode_t tree2_curr_node = tree1_write_list->head;
+    
+    while (tree1_curr_node != NULL){
+        while (tree2_curr_node != NULL){
+            if (tree1_curr_node->file_name == tree2_curr_node->file_name){
+                return true;
+            }
+            
+            tree2_curr_node = tree2_curr_node->next;
+        }
+        
+        tree1_curr_node = tree1_curr_node->next;
+    }
+    
+    return false;
+}
+
+///////////////////////////////////////////////////////////////////////
+///////////////////   EXECUTING COMMAND CODE    ///////////////////////
+///////////////////////////////////////////////////////////////////////
 
 //check for inputs and outputs
 //if they exist, deal with them somehow
