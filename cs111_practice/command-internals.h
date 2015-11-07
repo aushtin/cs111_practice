@@ -24,6 +24,8 @@ struct command
     char *input;
     char *output;
     
+    int tree_number;
+    
     union
     {
         // for AND_COMMAND, SEQUENCE_COMMAND, OR_COMMAND, PIPE_COMMAND:
@@ -36,3 +38,5 @@ struct command
         struct command *subshell_command;
     } u;
 };
+
+

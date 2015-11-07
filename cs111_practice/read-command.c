@@ -140,6 +140,7 @@ command_t createCommand(enum command_type new_cmd, char *command_string) {
     x->status = -1;
     x->input = 0;
     x->output = 0;
+    x->tree_number = 0;
     
     
     switch (new_cmd) {
@@ -256,6 +257,7 @@ struct commandNode{
     command_t cmd;
     commandNode_t next;
     commandNode_t prev;
+    int tree_number;
 };
 
 commandNode_t createNode(enum command_type new_cmd){

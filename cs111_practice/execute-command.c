@@ -19,6 +19,164 @@ command_status (command_t c)
     return c->status;
 }
 
+typedef struct wnode *wnode_t;
+
+struct wnode {
+    
+    char* file_name;
+    wnode_t next, prev;
+    
+    
+};
+
+wnode_t create_wnode(char* file_name) {
+    
+    wnode_t x = (wnode_t) checked_malloc(sizeof(*x));
+    x->file_name = file_name;
+    x->next = NULL;
+    x->prev = NULL;
+    return x;
+    
+}
+
+typedef struct write_list *write_list_t;
+
+struct write_list {
+    //head and tail pointers
+    wnode_t head, tail;
+    
+    //just in case we need to look in the middle of the list
+    wnode_t current;
+    
+    int tree_number;
+};
+
+write_list_t init_write_list(int tree_number){
+    write_list_t new_write_list = (write_list_t) checked_malloc(sizeof(write_list_t));
+    new_write_list->head = NULL;
+    new_write_list->tail = NULL;
+    new_write_list->current = NULL;
+    new_write_list->tree_number=tree_number;
+    return new_write_list;
+}
+
+void add_wnode_to_list(write_list_t w_list, wnode_t new_node) {
+    
+    if (w_list->head == NULL) {
+        w_list->head = new_node;
+        w_list->tail = new_node;
+    }
+    
+    else {
+        w_list->tail->next = new_node;
+        new_node->next=NULL;
+        new_node->prev=w_list->tail;
+        
+        w_list->tail = new_node;
+        
+        
+    }
+    
+}
+
+write_list_t make_write_list(write_list_t w_list, command_t c, int tree_number) {
+
+    
+    if (c == NULL)
+        return NULL;
+    
+    //if c->output is not NULL, there is a WRITE here
+    if (c->output != NULL) {
+        
+        wnode_t new_write = create_wnode(c->output);
+        add_wnode_to_list(w_list, new_write);
+        
+    }
+    
+    switch (c->type) {
+            
+        case AND_COMMAND:
+        case OR_COMMAND:
+        case PIPE_COMMAND:
+        case SEQUENCE_COMMAND:
+            make_write_list(w_list, c->u.command[0], tree_number);
+            make_write_list(w_list, c->u.command[1], tree_number);
+            break;
+        case SIMPLE_COMMAND:
+            break;
+        case SUBSHELL_COMMAND:
+            make_write_list(w_list, c->u.subshell_command, tree_number);
+            break;
+        default:
+            break;
+            
+    }
+    
+    return w_list;
+    
+}
+
+typedef struct rnode *rnode_t;
+
+struct rnode {
+    
+    char* file_name;
+    rnode_t next, prev;
+    
+    
+};
+
+rnode_t create_rnode(char* file_name) {
+    
+    rnode_t x = (rnode_t) checked_malloc(sizeof(*x));
+    x->file_name = file_name;
+    x->next = NULL;
+    x->prev = NULL;
+    return x;
+    
+}
+
+typedef struct read_list *read_list_t;
+
+struct read_list {
+    //head and tail pointers
+    rnode_t head, tail;
+    
+    //just in case we need to look in the middle of the list
+    rnode_t current;
+    
+    int tree_number;
+};
+
+read_list_t init_read_list(int tree_number){
+    read_list_t new_read_list = (read_list_t) checked_malloc(sizeof(read_list_t));
+    new_read_list->head = NULL;
+    new_read_list->tail = NULL;
+    new_read_list->current = NULL;
+    new_read_list->tree_number=tree_number;
+    return new_read_list;
+}
+
+void add_rnode_to_list(read_list_t r_list, rnode_t new_node) {
+    
+    if (r_list->head == NULL) {
+        r_list->head = new_node;
+        r_list->tail = new_node;
+    }
+    
+    else {
+        r_list->tail->next = new_node;
+        new_node->next=NULL;
+        new_node->prev=r_list->tail;
+        
+        r_list->tail = new_node;
+        
+        
+    }
+    
+}
+
+
 //check for inputs and outputs
 //if they exist, deal with them somehow
 void handle_IO(command_t c) {
@@ -64,10 +222,12 @@ void handle_IO(command_t c) {
 
 
 
+
 //what is time_travel?
 void
 execute_command (command_t c, int time_travel)
 {
+    
     
     pid_t pid;
     int fildes[2];    
@@ -239,7 +399,4 @@ execute_command (command_t c, int time_travel)
             
             
     }
-    
-    
-    
 }
