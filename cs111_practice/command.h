@@ -1,5 +1,7 @@
 // UCLA CS 111 Lab 1 command interface
 
+typedef enum { false, true } bool;
+
 typedef struct command *command_t;
 typedef struct commandNode *commandNode_t;
 typedef struct command_stream *command_stream_t;
@@ -16,9 +18,11 @@ struct commandNode{
     write_list_t write_list;
     read_list_t read_list;
     int tree_number;
+    bool command_tree_done_executing;
+    //commandNode_t* dependency_list;
 };
 
-typedef enum { false, true } bool;
+
 
 /* Create a command stream from LABEL, GETBYTE, and ARG.  A reader of
  the command stream will invoke GETBYTE (ARG) to get the next byte.
