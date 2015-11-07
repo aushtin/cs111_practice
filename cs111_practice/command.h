@@ -19,7 +19,7 @@ struct commandNode{
     read_list_t read_list;
     int tree_number;
     bool command_tree_done_executing;
-    //commandNode_t* dependency_list;
+    commandNode_t* dependency_list;
 };
 
 
