@@ -329,7 +329,6 @@ execute_command (command_t c, int time_travel)
                 execvp(c->u.word[0], c->u.word);
                 
                 //error in finding file
-                
                 fprintf(stderr, "%s: command not found\n", c->u.word[0]);
                 exit(1);
                 
@@ -346,6 +345,7 @@ execute_command (command_t c, int time_travel)
                 /*
                  printf("WIFEXITED returns %d\n", WIFEXITED(status));
                  if (WIFEXITED(status)) {
+
                  printf("first child exited with %u\n", status);*/
                 if (WIFEXITED(status)) {
                     c->status = WEXITSTATUS(status);
