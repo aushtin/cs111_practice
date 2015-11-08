@@ -578,7 +578,30 @@ execute_command (command_t c, int time_travel)
 
 
 void
-time_travel(command_stream_t cstream) {
+exec_time_travel(command_stream_t cstream) {
 
-    
+    command_t last_command = NULL;
+    command_t command;
+    while ((command = read_command_stream (cstream)))
+    {
+        
+        //printf ("# %d\n", command_number++);
+        //print_command (command);
+        
+        //free_command(command);
+        pid_t pid;
+        
+        pid = fork();
+        int i = 0;
+        
+        if (pid == 0) {
+            while (cstream->current->dependency_list[i] != NULL) {
+                while (cstream->current->dependency_list[i] -> cmd ->status == -1) {}
+            }
+            execute_command(command, 0);
+            exit(0);
+        }
+
+        
+    }
 }
