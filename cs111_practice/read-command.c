@@ -204,6 +204,58 @@ command_t createCommand(enum command_type new_cmd, char *command_string) {
              j++;
              
              }*/
+            int j=0;
+            
+            //search for redirects
+            while (command_string[j] != '\0') {
+                if (command_string[j] == '<') {
+                    //get the filename
+                    int k = j+1;
+                    int filename_startpos = k;
+                    while (command_string[k] != '\0' && command_string[k] != '>') {
+                        k++;
+                    }
+                    
+                    int input_filename_size = k-filename_startpos;
+                    char* input_filename = (char*) checked_malloc((input_filename_size+1) * sizeof(char));
+                    memset(input_filename, '\0', (input_filename_size+1) * sizeof(char));
+                    int filename_pos =0;
+                    
+                    for (int l = filename_startpos; l<k; l++) {
+                        input_filename[filename_pos] = command_string[l];
+                        filename_pos++;
+                    }
+                    
+                    //if we're here we've read in the filename
+                    x->input = input_filename;
+                }
+                
+                if (command_string[j] == '>') {
+                    
+                    int k = j+1;
+                    int filename_startpos = k;
+                    while (command_string[k] != '\0') {
+                        k++;
+                    }
+                    
+                    int input_filename_size = k-filename_startpos;
+                    char* output_filename = (char*) checked_malloc((input_filename_size+1) * sizeof(char));
+                    memset(output_filename, '\0', (input_filename_size+1) * sizeof(char));
+                    int filename_pos =0;
+                    
+                    for (int l = filename_startpos; l<k; l++) {
+                        output_filename[filename_pos] = command_string[l];
+                        filename_pos++;
+                    }
+                    
+                    //if we're here, we've read in the full filename.
+                    x->output = output_filename;
+                    
+                }
+                
+                j++;
+                
+            }
             
             //number of words in simple command = white space + 1
             //malloc appropriate memory
@@ -269,7 +321,7 @@ commandNode_t createNodeFromCommand(command_t new_command){
     x->read_list = NULL;
     x->command_tree_done_executing = false;
     x->dependency_list=checked_malloc(sizeof(commandNode_t));
-    
+
     return x;
 }
 
@@ -1040,7 +1092,6 @@ make_command_stream (int (*get_next_byte) (void *),
                     commandNode_t root = createNodeFromCommand(make_command_tree(buffer_no_whitespaces));
                     
                     
-                    
                     root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(char*)));
                     //root->dependency_list = (commandNode_t*)(checked_malloc((tree_number) * sizeof(char*)));
                     memset (root -> dependency_list, '\0', (tree_number) * sizeof(commandNode_t));
@@ -1187,6 +1238,7 @@ make_command_stream (int (*get_next_byte) (void *),
         read_list_t read_list = init_read_list();
         root->read_list = make_read_list(read_list, root->cmd);
         root->tree_number=tree_number;
+
         
         root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(char*)));
         
@@ -1194,6 +1246,10 @@ make_command_stream (int (*get_next_byte) (void *),
         memset (root -> dependency_list, '\0', (tree_number) * sizeof(commandNode_t));
         
         addNodeToStream(theStream, root);
+
+        
+    addNodeToStream(theStream, root);
+
     }
     
     free(buffer);
@@ -1261,3 +1317,4 @@ read_command_stream (command_stream_t s)
     free(to_be_freed);
     return grabbed_command;
 }
+

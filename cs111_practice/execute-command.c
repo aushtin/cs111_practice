@@ -576,6 +576,9 @@ execute_command (command_t c, int time_travel)
     }
 }
 
-void time_travel (command_stream_t cstream){
+
+void
+time_travel(command_stream_t cstream) {
+
     
 }
