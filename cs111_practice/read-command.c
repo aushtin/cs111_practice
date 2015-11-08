@@ -309,6 +309,7 @@ commandNode_t createNode(enum command_type new_cmd){
     x->read_list = NULL;
     x->tree_number = 0;
     x->command_tree_done_executing=false;
+    x->dependencies_done = false;
     x->dependency_list=checked_malloc(sizeof(commandNode_t));
     return x;
 }
@@ -322,6 +323,7 @@ commandNode_t createNodeFromCommand(command_t new_command){
     x->read_list = NULL;
     x->tree_number = 0;
     x->command_tree_done_executing = false;
+    x->dependencies_done = false;
     x->dependency_list=checked_malloc(sizeof(commandNode_t));
 
     return x;
@@ -1093,16 +1095,23 @@ make_command_stream (int (*get_next_byte) (void *),
                     
                     commandNode_t root = createNodeFromCommand(make_command_tree(buffer_no_whitespaces));
                     
+                    //printf("adding command node to stream: %s\n", root->cmd->u.word[0]);
+                    
                     write_list_t write_list = init_write_list();
+                    
+                    //printf("adding command node to stream: %s\n", root->cmd->u.word[0]);
                     root->write_list = make_write_list(write_list, root->cmd);
                     read_list_t read_list = init_read_list();
                     root->read_list = make_read_list(read_list, root->cmd);
+
+                    root->tree_number=tree_number;
                     
                     root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t)));
-                    //root->dependency_list = (commandNode_t*)(checked_malloc((tree_number) * sizeof(char*)));
                     memset (root -> dependency_list, '\0', (tree_number) * sizeof(commandNode_t));
-                    root->tree_number = tree_number;
-                    tree_number++;
+                    
+                    
+                    //printf("adding command node to stream: %s\n", root->cmd->u.word[0]);
+                    
                     addNodeToStream(theStream, root);
                     
                     
@@ -1112,7 +1121,7 @@ make_command_stream (int (*get_next_byte) (void *),
                     numChars = 0;
                     consecutive_newlines = 0;
                     
-               
+                    tree_number++;
                     
                     
                     if (curr == EOF)
@@ -1234,8 +1243,8 @@ make_command_stream (int (*get_next_byte) (void *),
      printf("%c", buffer_no_whitespaces[i]);
      }
      printf("\n");
-     }
-     */
+     }*/
+     
     
     //make sure buffer_no_whitespace is not empty
     if (buffer_no_whitespaces[0] != '\0') {
@@ -1249,8 +1258,9 @@ make_command_stream (int (*get_next_byte) (void *),
 
         
         root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t)));
-
         memset (root -> dependency_list, '\0', (tree_number) * sizeof(commandNode_t));
+        
+        //printf("adding command node to stream: %s\n", root->cmd->u.word[0]);
         
         addNodeToStream(theStream, root);
     }

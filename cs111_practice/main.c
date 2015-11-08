@@ -64,11 +64,15 @@ int main (int argc, char **argv) {
     command_t last_command = NULL;
     command_t command;
     
-    if (time_travel == 1){
+    
+    if (time_travel==1) {
         exec_time_travel(command_stream);
-    } else {
-        while ((command = read_command_stream (command_stream)))
-        {
+        exit(0);
+    }
+    else {
+
+    while ((command = read_command_stream (command_stream)))
+    {
    
             //printf ("# %d\n", command_number++);
             //print_command (command);
@@ -89,5 +93,7 @@ int main (int argc, char **argv) {
         }
         printf("\n");
     }*/
+    
+
     return 0;
 }
