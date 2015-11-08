@@ -1258,7 +1258,7 @@ make_command_stream (int (*get_next_byte) (void *),
     free(buffer);
     free(buffer_no_whitespaces);
     
-    make_dependency_lists(theStream);
+    //make_dependency_lists(theStream);
     return theStream;
 }
 

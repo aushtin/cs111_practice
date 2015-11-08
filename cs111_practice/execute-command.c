@@ -55,7 +55,7 @@ struct write_list {
 };
 
 write_list_t init_write_list(){
-    write_list_t new_write_list = (write_list_t) checked_malloc(sizeof(write_list_t));
+    write_list_t new_write_list = (write_list_t) checked_malloc(sizeof(struct write_list));
     new_write_list->head = NULL;
     new_write_list->tail = NULL;
     new_write_list->current = NULL;
@@ -135,7 +135,7 @@ struct read_list {
 };
 
 read_list_t init_read_list(){
-    read_list_t new_read_list = (read_list_t) checked_malloc(sizeof(read_list_t));
+    read_list_t new_read_list = (read_list_t) checked_malloc(sizeof(struct read_list));
     new_read_list->head = NULL;
     new_read_list->tail = NULL;
     new_read_list->current = NULL;
@@ -576,28 +576,98 @@ execute_command (command_t c, int time_travel)
 
 
 void
-time_travel(command_stream_t cstream) {
+exec_time_travel(command_stream_t cstream) {
     
     make_dependency_lists(cstream);
     
-    command_t last_command = NULL;
     command_t command;
+    commandNode_t cNode = cstream->head;
     
+    pid_t pid;
+    pid_t proc_table[100];
+    int fildes[2];
+    int number = 0;
     
+    /*
+    We want to execute commands (each root) in parallel if possible.
+    So far we have the dependency lists made.
+    We want to go through each commandNode and then:
+        1. Look at the dependency list.
+            If there are dependencies, let parent process finish.
+        2. If there are no dependencies, run in parallel.
+    */
     while ((command = read_command_stream(cstream))){
-        pid_t pid;
+     
         pid = fork();
         int i=0;
         
-        if (pid==0){
-            while (cstream->current->dependency_list[i] != NULL){
-                int j=0;
-                /*
-                while (cstream->current->dependency_list[i][j]){
+        if (pid==0){  //child
+            cNode = cNode->next;
+            
+        } else if (pid > 0) {  //parent
+            int status;
+            
+            proc_table[cNode->tree_number - 1] = pid;
+            number++;
+            
+            commandNode_t find_tree;
+            find_tree = cstream->head;
+            int j;
+            for (j=0; j<number;j++){
+                if (waitpid(proc_table[i], &status, 0)){
                     
-                }*/
+                    if (find_tree->tree_number == j+1){
+                        find_tree->command_tree_done_executing=true;
+                    }
+                }
             }
+            
+            /*
+            while (cNode->dependency_list[i] != NULL){
+                while (cNode->dependency_list[i]->cmd->status == -1) {}
+                
+                i++;
+            }*/
+            
+            execute_command(cNode->cmd, 0);
+        } else if (pid == -1) {
+            fprintf(stderr, "Couldn't create child process in exec_time_travel.");
+            exit(1);
         }
-    }
+
     
+    /*
+    while ((cNode = cNode->next)){
+        //If dependency list is empty, run in parallel
+        if (cNode->dependency_list == NULL){
+            pid = fork();
+            
+            if (pid==0){  //child
+                continue;
+            } else if (pid > 0) {  //parent
+                execute_command(cNode->cmd, 0);
+            } else if (pid == -1) {
+                fprintf(stderr, "Couldn't create child process in exec_time_travel, dependency list does not exist.");
+                exit(1);
+            }
+        } else { //If items in the dependency list exist, wait until the parent process finishes
+            pid = fork();
+            
+            if (pid==0){  //child
+                continue;
+            } else if (pid > 0) {  //parent
+                int i=0;
+                while (cNode->dependency_list[i]){
+                    //wait for each dependency to finish
+                    while (cNode->dependency_list[i]->cmd->status == -1) {}
+                    execute_command(cNode->cmd, 0);
+                }
+            } else if (pid == -1) {
+                fprintf(stderr, "Couldn't create child process in exec_time_travel, depedency list exists..");
+                exit(1);
+            }
+
+        }
+    }*/
+    }
 }

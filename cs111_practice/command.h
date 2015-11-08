@@ -68,6 +68,10 @@ bool RAW_dependency(read_list_t tree2_read_list, write_list_t tree1_write_list);
 bool WAR_dependency(write_list_t tree2_write_list, read_list_t tree1_read_list);
 bool WAW_dependency(write_list_t tree2_write_list, write_list_t tree1_write_list);
 
+/* Makes dependency lists for each root.  */
 void make_dependency_lists (command_stream_t cstream);
+
+/* Allows time-travel during execution (i.e. parallelism).  */
+void exec_time_travel(command_stream_t cstream);
 
 void free_command(command_t);

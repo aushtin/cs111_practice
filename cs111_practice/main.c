@@ -63,15 +63,20 @@ int main (int argc, char **argv) {
     
     command_t last_command = NULL;
     command_t command;
-    while ((command = read_command_stream (command_stream)))
-    {
+    
+    if (time_travel == 1){
+        exec_time_travel(command_stream);
+    } else {
+        while ((command = read_command_stream (command_stream)))
+        {
    
-        //printf ("# %d\n", command_number++);
-        //print_command (command);
+            //printf ("# %d\n", command_number++);
+            //print_command (command);
         
-        //free_command(command);
-        execute_command(command, 0);
+            //free_command(command);
+            execute_command(command, 0);
 
+        }
     }
     
     /*
