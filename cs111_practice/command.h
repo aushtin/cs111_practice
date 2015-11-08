@@ -22,7 +22,13 @@ struct commandNode{
     commandNode_t* dependency_list;
 };
 
-
+struct command_stream {
+    //head and tail pointers
+    commandNode_t head, tail;
+    
+    //just in case we need to look in the middle of the list
+    commandNode_t current;
+};
 
 /* Create a command stream from LABEL, GETBYTE, and ARG.  A reader of
  the command stream will invoke GETBYTE (ARG) to get the next byte.
