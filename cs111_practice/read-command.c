@@ -307,6 +307,7 @@ commandNode_t createNode(enum command_type new_cmd){
     x->prev = NULL;
     x->write_list = NULL;
     x->read_list = NULL;
+    x->tree_number = 0;
     x->command_tree_done_executing=false;
     x->dependency_list=checked_malloc(sizeof(commandNode_t));
     return x;
@@ -319,6 +320,7 @@ commandNode_t createNodeFromCommand(command_t new_command){
     x->prev = NULL;
     x->write_list = NULL;
     x->read_list = NULL;
+    x->tree_number = 0;
     x->command_tree_done_executing = false;
     x->dependency_list=checked_malloc(sizeof(commandNode_t));
 
@@ -1095,12 +1097,15 @@ make_command_stream (int (*get_next_byte) (void *),
                     root->write_list = make_write_list(write_list, root->cmd);
                     read_list_t read_list = init_read_list();
                     root->read_list = make_read_list(read_list, root->cmd);
+
                     root->tree_number=tree_number;
                     
                     root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t)));
+
                     //root->dependency_list = (commandNode_t*)(checked_malloc((tree_number) * sizeof(char*)));
                     memset (root -> dependency_list, '\0', (tree_number) * sizeof(commandNode_t));
-                    
+                    root->tree_number = tree_number;
+                    tree_number++;
                     addNodeToStream(theStream, root);
                     
                     
@@ -1110,7 +1115,7 @@ make_command_stream (int (*get_next_byte) (void *),
                     numChars = 0;
                     consecutive_newlines = 0;
                     
-                    tree_number++;
+               
                     
                     
                     if (curr == EOF)
@@ -1238,6 +1243,7 @@ make_command_stream (int (*get_next_byte) (void *),
     //make sure buffer_no_whitespace is not empty
     if (buffer_no_whitespaces[0] != '\0') {
         commandNode_t root = createNodeFromCommand(make_command_tree(buffer_no_whitespaces));
+        
         write_list_t write_list = init_write_list();
         root->write_list = make_write_list(write_list, root->cmd);
         read_list_t read_list = init_read_list();
@@ -1245,20 +1251,17 @@ make_command_stream (int (*get_next_byte) (void *),
         root->tree_number=tree_number;
 
         
-        (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t)));
-        
-        // root->dependency_list = (commandNode_t*)(checked_malloc((tree_number) * sizeof(char*)));
+        root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t)));
+
         memset (root -> dependency_list, '\0', (tree_number) * sizeof(commandNode_t));
         
         addNodeToStream(theStream, root);
-
-        
-
     }
     
     free(buffer);
     free(buffer_no_whitespaces);
     
+    //make_dependency_lists(theStream);
     return theStream;
 }
 
@@ -1296,10 +1299,6 @@ void free_command(command_t to_be_freed) {
         free(to_be_freed->u.subshell_command);
         
     }
-    
-    
-    
-    
 }
 
 command_t
@@ -1308,7 +1307,6 @@ read_command_stream (command_stream_t s)
     if (s->head == NULL) {
         return NULL;
     }
-    
     
     command_t grabbed_command = s->head->cmd;
     commandNode_t to_be_freed = s->head;

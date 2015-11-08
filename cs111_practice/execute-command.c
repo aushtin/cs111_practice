@@ -172,7 +172,7 @@ read_list_t make_read_list(read_list_t r_list, command_t c){
     
     //if c->output is not NULL, there is a write, add it
     if (c->input){
-        rnode_t new_read = create_rnode(c->output);
+        rnode_t new_read = create_rnode(c->input);
         add_rnode_to_list(new_read, r_list);
     }
     
@@ -405,8 +405,6 @@ void handle_IO(command_t c) {
 void
 execute_command (command_t c, int time_travel)
 {
-    
-    
     pid_t pid;
     int fildes[2];
     switch (c->type) {
@@ -579,29 +577,28 @@ execute_command (command_t c, int time_travel)
 
 void
 exec_time_travel(command_stream_t cstream) {
-
+    
+    make_dependency_lists(cstream);
+    
     command_t last_command = NULL;
     command_t command;
-    while ((command = read_command_stream (cstream)))
-    {
-        
-        //printf ("# %d\n", command_number++);
-        //print_command (command);
-        
-        //free_command(command);
+    
+    
+    while ((command = read_command_stream(cstream))){
         pid_t pid;
-        
         pid = fork();
-        int i = 0;
+        int i=0;
         
-        if (pid == 0) {
-            while (cstream->current->dependency_list[i] != NULL) {
-                while (cstream->current->dependency_list[i] -> cmd ->status == -1) {}
+        if (pid==0){
+            while (cstream->current->dependency_list[i] != NULL){
+                int j=0;
+                /*
+                while (cstream->current->dependency_list[i][j]){
+                    
+                }*/
             }
-            execute_command(command, 0);
-            exit(0);
         }
-
-        
     }
+    
+
 }
