@@ -1098,7 +1098,7 @@ make_command_stream (int (*get_next_byte) (void *),
                     read_list_t read_list = init_read_list();
                     root->read_list = make_read_list(read_list, root->cmd);
                     
-                    root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t*)));
+                    root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t)));
                     //root->dependency_list = (commandNode_t*)(checked_malloc((tree_number) * sizeof(char*)));
                     memset (root -> dependency_list, '\0', (tree_number) * sizeof(commandNode_t));
                     root->tree_number = tree_number;
@@ -1248,7 +1248,7 @@ make_command_stream (int (*get_next_byte) (void *),
         root->tree_number=tree_number;
 
         
-        root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t*)));
+        root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t)));
 
         memset (root -> dependency_list, '\0', (tree_number) * sizeof(commandNode_t));
         
@@ -1258,7 +1258,7 @@ make_command_stream (int (*get_next_byte) (void *),
     free(buffer);
     free(buffer_no_whitespaces);
     
-    //make_dependency_lists(theStream);
+    make_dependency_lists(theStream);
     return theStream;
 }
 
