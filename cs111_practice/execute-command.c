@@ -14,27 +14,24 @@
 #include <sys/wait.h>
 
 /*
-Thoughts on how to implement time travel:
+ Thoughts on how to implement time travel:
  
-Find files that are dependent
-    - look for input/output operators
-
+ Find files that are dependent
+ - look for input/output operators
  Make dependency graph
-    - which commands are dependent on a previous command?
+ - which commands are dependent on a previous command?
  
-Pseudocode:
-
+ Pseudocode:
  Traverse each tree in order to find commands with inputs and outputs
-    Store these inputs/outputs in a data structure specific to each tree
+ Store these inputs/outputs in a data structure specific to each tree
  Traverse rest of the trees, and do the same
  Compare the input/output data structures of the trees
-    If we find two inputs/outputs are same in two commands, we have dependence
-        Increment number of dependencies for that specific input/output
+ If we find two inputs/outputs are same in two commands, we have dependence
+ Increment number of dependencies for that specific input/output
  Run non-dependent in parallel
  execute dependent commands sequentially
-
  
-*/
+ */
 
 int
 command_status (command_t c)
@@ -227,7 +224,7 @@ bool compare_read_list (read_list_t read_list1, read_list_t read_list2){
 }
 
 /////////////////////////////////////////////////////////////
-////////////////   DEPENDENCY TYPES    //////////////////////
+/////////////////   DEPENDENCY CODE    //////////////////////
 /////////////////////////////////////////////////////////////
 
 bool RAW_dependency(read_list_t tree2_read_list, write_list_t tree1_write_list){
@@ -297,6 +294,64 @@ bool WAW_dependency(write_list_t tree2_write_list, write_list_t tree1_write_list
     }
     
     return false;
+}
+
+void make_dependency_lists (command_stream_t cstream){
+    
+    if (cstream == NULL){
+        fprintf(stderr, "Error: Cannot make dependency lists on NULL stream.");
+        exit(1);
+    }
+    
+    commandNode_t curr_node = cstream->head;
+    commandNode_t to_be_compared = cstream->head->next;
+    
+    int i=0;
+    
+    while (curr_node != NULL){
+        
+        while (to_be_compared != NULL){
+            
+            //check for read-after-write (RAW) dependency
+            //check for write-after-read (WAR) dependency
+            //check for waw dependency
+            if (RAW_dependency(to_be_compared->read_list, curr_node->write_list)){
+                i=0;
+                while (to_be_compared->dependency_list[i] != '\0'){
+                    i++;
+                }
+                to_be_compared->dependency_list[i] = curr_node;
+                to_be_compared = to_be_compared->next;
+                continue;
+            } else if (WAR_dependency(to_be_compared->write_list, curr_node->read_list)){
+                i=0;
+                while (to_be_compared->dependency_list[i] != '\0'){
+                    i++;
+                }
+                to_be_compared->dependency_list[i] = curr_node;
+                to_be_compared = to_be_compared->next;
+                
+                continue;
+            } else if (WAW_dependency(to_be_compared->write_list, curr_node->write_list)){
+                i=0;
+                while (to_be_compared->dependency_list[i] != '\0'){
+                    i++;
+                }
+                to_be_compared->dependency_list[i] = curr_node;
+                to_be_compared = to_be_compared->next;
+                continue;
+            }
+            
+            /* If we get here, no dependencies were encountered. */
+            to_be_compared = to_be_compared->next;
+        }
+        
+        curr_node = curr_node->next;
+        if (curr_node != NULL){
+            to_be_compared = curr_node->next;
+        }
+    }
+            
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -389,7 +444,6 @@ execute_command (command_t c, int time_travel)
                 /*
                  printf("WIFEXITED returns %d\n", WIFEXITED(status));
                  if (WIFEXITED(status)) {
-
                  printf("first child exited with %u\n", status);*/
                 if (WIFEXITED(status)) {
                     c->status = WEXITSTATUS(status);
@@ -519,6 +573,9 @@ execute_command (command_t c, int time_travel)
             fprintf(stderr, "command is somehow invalid");
             exit(1);
             break;
-            
     }
+}
+
+void time_travel (command_stream_t cstream){
+    
 }
