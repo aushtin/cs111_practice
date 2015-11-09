@@ -20,6 +20,7 @@ struct commandNode{
     int tree_number;
     bool command_tree_done_executing;
     bool dependencies_done;
+    bool command_tree_begun_executing;
     commandNode_t* dependency_list;
 };
 

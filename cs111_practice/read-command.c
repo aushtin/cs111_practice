@@ -310,6 +310,7 @@ commandNode_t createNode(enum command_type new_cmd){
     x->tree_number = 0;
     x->command_tree_done_executing=false;
     x->dependencies_done = false;
+    x->command_tree_begun_executing = false;
     x->dependency_list=checked_malloc(sizeof(commandNode_t));
     return x;
 }
@@ -324,6 +325,7 @@ commandNode_t createNodeFromCommand(command_t new_command){
     x->tree_number = 0;
     x->command_tree_done_executing = false;
     x->dependencies_done = false;
+    x->command_tree_begun_executing = false;
     x->dependency_list=checked_malloc(sizeof(commandNode_t));
 
     return x;
