@@ -693,6 +693,8 @@ command_stream_t initStream(){
     new_stream->head = NULL;
     new_stream->tail = NULL;
     new_stream->current = NULL;
+    new_stream->blocked_commands = checked_malloc(sizeof(commandNode_t));
+    memset(new_stream->blocked_commands, '\0', sizeof(commandNode_t));
     return new_stream;
 }
 
@@ -712,6 +714,8 @@ void addNodeToStream(command_stream_t cs_stream, commandNode_t new_node) {
         
         
     }
+    
+    cs_stream->num_nodes = cs_stream->num_nodes+1;
     
 }
 
@@ -1269,6 +1273,10 @@ make_command_stream (int (*get_next_byte) (void *),
     free(buffer_no_whitespaces);
     
     //make_dependency_lists(theStream);
+    
+    theStream->blocked_commands = (commandNode_t*) checked_realloc(theStream->blocked_commands, theStream->num_nodes * sizeof(commandNode_t));
+    memset(theStream->blocked_commands, '\0', theStream->num_nodes * sizeof(commandNode_t));
+    
     return theStream;
 }
 
