@@ -714,7 +714,8 @@ void addNodeToStream(command_stream_t cs_stream, commandNode_t new_node) {
         cs_stream->tail = new_node;
     }
     
-    cs_stream->num_nodes = cs_stream->num_nodes + 1;
+    cs_stream->num_nodes = cs_stream->num_nodes+1;
+
 }
 
 bool isTokenChar(char character) {

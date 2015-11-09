@@ -606,7 +606,9 @@ exec_time_travel(command_stream_t cstream) {
                 exit(1);
             }
             else if (pid == 0) {
-                printf("Executing first command.\n");
+                
+                printf("executing first command\n");
+
                 execute_command(cNode->cmd, 0);
                 exit(0);
             }
@@ -633,7 +635,7 @@ exec_time_travel(command_stream_t cstream) {
                     exit(1);
                 }
                 else if (pid == 0) {
-                    printf("Executing command with no dependencies.\n");
+                    printf("executing command with no dependencies\n");
                     execute_command(cNode->cmd, 0);
                     exit(0);
                 }
@@ -671,6 +673,7 @@ exec_time_travel(command_stream_t cstream) {
                         exit(1);
                     }
                     else if (pid == 0) {
+
                         printf("executing command after dependencies finished\n");
                         execute_command(cNode->cmd, 0);
                         exit(0);
@@ -679,12 +682,14 @@ exec_time_travel(command_stream_t cstream) {
                         process_table[number_of_children] = pid;
                         number_of_children++;
                     }
+
             
                 } else {  //dependencies aren't done; add parent to blocked_command
                 cstream->blocked_commands[numBlocked] = cNode;
                 numBlocked++;
                 }
             }
+            
         }
         
         //update process status
