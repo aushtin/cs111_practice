@@ -66,7 +66,7 @@ int main (int argc, char **argv) {
     
     
     if (time_travel==1) {
-        printf("executing time travel\n");
+        //printf("executing time travel\n");
         exec_time_travel(command_stream);
         exit(0);
     }

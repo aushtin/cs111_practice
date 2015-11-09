@@ -175,6 +175,7 @@ read_list_t make_read_list(read_list_t r_list, command_t c){
         rnode_t new_read = create_rnode(c->input);
         add_rnode_to_list(new_read, r_list);
     }
+   
     
     switch (c->type) {
         case AND_COMMAND:
@@ -189,6 +190,7 @@ read_list_t make_read_list(read_list_t r_list, command_t c){
             //check for arguments
             int i = 1;
             while (c->u.word[i] != NULL) {
+
                 rnode_t new_read = create_rnode(c->u.word[i]);
                 add_rnode_to_list(new_read, r_list);
                 i++;
@@ -603,7 +605,7 @@ fork_and_begin_exec(command_t command, pid_t *proc_table, int index) {
     else {
         
         proc_table[index] = pid;
-        
+    
     }
     
 }
@@ -616,7 +618,6 @@ void check_dependencies(commandNode_t cNode) {
         
         cNode->dependencies_done = true;
     }
-    
     
     //if there are dependencies, check if theyre done
     else {
@@ -711,7 +712,6 @@ exec_time_travel(command_stream_t cstream) {
             }
         }
         
-        
         //check if any children are DONE
         commandNode_t update;
         update = cstream->head;
@@ -750,7 +750,6 @@ exec_time_travel(command_stream_t cstream) {
     //begin waiting for blocked
     while (number_of_finished != cstream->num_nodes) {
         
-        
         //check if any children are DONE
         commandNode_t update;
         update = cstream->head;
@@ -782,9 +781,7 @@ exec_time_travel(command_stream_t cstream) {
         
         
         if (number_of_finished == cstream->num_nodes) {
-            
             return;
-            
         }
         
         //check dependencies in blocked_commands
