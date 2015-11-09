@@ -194,6 +194,8 @@ read_list_t make_read_list(read_list_t r_list, command_t c){
                 add_rnode_to_list(new_read, r_list);
                 i++;
             }
+            
+            break;
         }
             
         case SUBSHELL_COMMAND: {

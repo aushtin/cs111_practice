@@ -5,6 +5,7 @@ typedef enum { false, true } bool;
 typedef struct command *command_t;
 typedef struct commandNode *commandNode_t;
 typedef struct command_stream *command_stream_t;
+typedef struct commandStack *commandStack_t;
 
 typedef struct wnode *wnode_t;
 typedef struct write_list *write_list_t;
