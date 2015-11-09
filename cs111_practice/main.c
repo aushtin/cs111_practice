@@ -41,7 +41,7 @@ int main (int argc, char **argv) {
 
      int command_number = 1;
      int print_tree = 1;
-     int time_travel = 1;
+     int time_travel = 0;
      program_name = argv[0];
      /*
      for (;;)
