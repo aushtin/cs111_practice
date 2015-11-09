@@ -29,6 +29,8 @@ struct command_stream {
     
     //just in case we need to look in the middle of the list
     commandNode_t current;
+    int num_nodes;
+    commandNode_t* blocked_commands;
 };
 
 /* Create a command stream from LABEL, GETBYTE, and ARG.  A reader of
