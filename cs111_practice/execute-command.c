@@ -170,7 +170,7 @@ read_list_t make_read_list(read_list_t r_list, command_t c){
         return NULL;
     }
     
-    //if c->output is not NULL, there is a write, add it
+    //if c->input is not NULL, there is a read, add it
     if (c->input){
         rnode_t new_read = create_rnode(c->input);
         add_rnode_to_list(new_read, r_list);
@@ -185,8 +185,16 @@ read_list_t make_read_list(read_list_t r_list, command_t c){
             make_read_list(r_list, c->u.command[1]);
             break;
         }
-        case SIMPLE_COMMAND:
+        case SIMPLE_COMMAND: {
+            //check for arguments
+            int i = 1;
+            while (c->u.word[i] != NULL) {
+                rnode_t new_read = create_rnode(c->u.word[i]);
+                add_rnode_to_list(new_read, r_list);
+                i++;
+            }
             break;
+        }
         case SUBSHELL_COMMAND: {
             make_read_list(r_list, c->u.subshell_command);
             break;
