@@ -574,6 +574,28 @@ execute_command (command_t c, int time_travel)
     }
 }
 
+/*
+How it works so far:
+ 
+Start executing the first command by forking
+    The child would execute the code
+    Parent just adds pid of child to proc_table
+ 
+If we are not on the first commandNode
+    Check the dependency lists of the commandNode
+        If there are no dependencies, execute commmand
+            Execute command by forking (child executes code, parent adds pid of child to proc_table)
+        If there are dependencies, check to see if those dependencies are done
+            If they are done, execute (in same manner as usual)
+            If they aren't done, we add parent to blocked_list
+
+Update process status
+ 
+Check dependencies in blocked commands
+    Go through each blocked command, and look each blocked command's dependency lists
+        If depedency list is done, execute command justl likfe before
+ 
+*/
 
 void
 exec_time_travel(command_stream_t cstream) {
@@ -583,9 +605,10 @@ exec_time_travel(command_stream_t cstream) {
     command_t command;
     commandNode_t cNode;
     
-    pid_t pid;
-    
+    pid_t pid;    
     pid_t process_table[100];
+
+    
     int number_of_children=0;
     int numBlocked = 0;
     
@@ -602,26 +625,22 @@ exec_time_travel(command_stream_t cstream) {
             pid = fork();
             
             if (pid == -1) {
-                fprintf(stderr, "Error in fork() at the beginning of time_travel\n");
+                fprintf(stderr, "Error in fork() for first commandNode.\n");
                 exit(1);
             }
             else if (pid == 0) {
                 
-                printf("executing first command\n");
-
+                printf("Executing first command\n");
                 execute_command(cNode->cmd, 0);
                 exit(0);
             }
             else {
-                
+                printf("First commandNode added to proc_table.\n");
                 process_table[number_of_children] = pid;
                 number_of_children++;
             }
-        }
         
-        else { //this is not the first command
-            
-            //check dependency list
+        } else { //This is not the first command; check dependency list
             
             //if no dependencies, just execute
             if (cNode->dependency_list[0] == NULL) {
@@ -640,31 +659,26 @@ exec_time_travel(command_stream_t cstream) {
                     exit(0);
                 }
                 else {
-                    
                     process_table[number_of_children] = pid;
                     number_of_children++;
                 }
                 
-            }
-            
-            
-            //if there are dependencies, check if theyre done
-            else {
+            } else {  //If there are dependencies, check if they're done
                 
                 int check = 0;
-                
-                while ( cNode->dependency_list[check] != NULL ) {
+                while (cNode->dependency_list[check] != NULL) {
                     if (cNode->dependency_list[check]->command_tree_done_executing == false) {
                         break;
                     }
                     check++;
                 }
                 
-                if (cNode->dependency_list[check] == NULL)   //dependency list is done
+                //Dependency list is done if we've reached NULL byte in dependency list
+                if (cNode->dependency_list[check] == NULL)
                     cNode->dependencies_done = true;
                 
                 //if dependencies are done, fork and begin execution
-                if (cNode -> dependencies_done == true){
+                if (cNode->dependencies_done == true){
                     
                     pid = fork();
                     
@@ -684,9 +698,9 @@ exec_time_travel(command_stream_t cstream) {
                     }
 
             
-                } else {  //dependencies aren't done; add parent to blocked_command
-                cstream->blocked_commands[numBlocked] = cNode;
-                numBlocked++;
+                } else {  //dependencies aren't done; add parent to blocked_command list
+                    cstream->blocked_commands[numBlocked] = cNode;
+                    numBlocked++;
                 }
             }
             
@@ -697,20 +711,23 @@ exec_time_travel(command_stream_t cstream) {
         commandNode_t update;
         update = cstream->head;
         
-        while (update != NULL) {
+        int k=0;
+        while (update != NULL && k < number_of_children) {
             
             int status;
             
             //if a cNode is not flagged as done
             if (update->command_tree_done_executing == false) {
-                
-                //check if its done now
-                if (waitpid(process_table[update->tree_number - 1], &status, 0) != -1){
+
+                /* Check if its done now. waitpid(): on success, returns the process ID of the child whose state has changed; if WNOHANG was specified and one or more child(ren) specified by pid exist, but have not yet changed state, then 0 is returned. On error, -1 is returned.
+                */
+                if (waitpid(process_table[update->tree_number - 1], &status, WNOHANG) != process_table[update->tree_number-1]){
                     update->command_tree_done_executing = true;
                 }
             }
             
             update = update->next;
+            k++;
         }
         
         //check dependencies in blocked_commands
@@ -720,21 +737,45 @@ exec_time_travel(command_stream_t cstream) {
 
         int i=0;
         while ((check_blocked_commands = cstream->blocked_commands[i]) != NULL){
-            //check dependency lists again
+            
+            //Check dependency lists again
             int j=0;
-            while (cNode->dependency_list[j] != NULL ) {
-                if (cNode->dependency_list[j]->command_tree_done_executing == false) {
+            while (check_blocked_commands->dependency_list[j] != NULL ) {
+                if (check_blocked_commands->dependency_list[j]->command_tree_done_executing == false) {
                     break;
                 }
                 j++;
             }
             
-            if (cNode->dependency_list[j] == NULL)   //dependency list is done
-                cNode->dependencies_done = true;
+            //Dependency list is done
+            if (check_blocked_commands->dependency_list[j] == NULL)
+                check_blocked_commands->dependencies_done = true;
+            
+            if (check_blocked_commands->dependencies_done == true){
+                pid = fork();
+                
+                if (pid == -1) {
+                    fprintf(stderr, "Error in fork() at the beginning of time_travel\n");
+                    exit(1);
+                }
+                else if (pid == 0) {
+                    
+                    printf("executing command after dependencies finished\n");
+                    execute_command(cNode->cmd, 0);
+                    exit(0);
+                }
+                else {
+                    process_table[number_of_children] = pid;
+                    number_of_children++;
+                }
+            }
+
+            
             
             i++;
         }
 
+        
         //somehow need to wait for all children to exit
     
         cNode = cNode->next;
