@@ -26,12 +26,11 @@ struct commandNode{
 struct command_stream {
     //head and tail pointers
     commandNode_t head, tail;
-    
-    int num_nodes;
     //just in case we need to look in the middle of the list
     commandNode_t current;
+    int num_nodes;
     commandNode_t* blocked_commands;
-    
+
 };
 
 /* Create a command stream from LABEL, GETBYTE, and ARG.  A reader of
@@ -74,6 +73,10 @@ bool RAW_dependency(read_list_t tree2_read_list, write_list_t tree1_write_list);
 bool WAR_dependency(write_list_t tree2_write_list, read_list_t tree1_read_list);
 bool WAW_dependency(write_list_t tree2_write_list, write_list_t tree1_write_list);
 
+/* Makes dependency lists for each root.  */
 void make_dependency_lists (command_stream_t cstream);
+
+/* Allows time-travel during execution (i.e. parallelism).  */
+void exec_time_travel(command_stream_t cstream);
 
 void free_command(command_t);

@@ -74,12 +74,13 @@ int main (int argc, char **argv) {
     while ((command = read_command_stream (command_stream)))
     {
    
-        //printf ("# %d\n", command_number++);
-        //print_command (command);
+            //printf ("# %d\n", command_number++);
+            //print_command (command);
         
-        //free_command(command);
-        execute_command(command, 0);
+            //free_command(command);
+            execute_command(command, 0);
 
+        }
     }
     
     /*
@@ -93,6 +94,6 @@ int main (int argc, char **argv) {
         printf("\n");
     }*/
     
-    }
+
     return 0;
 }
