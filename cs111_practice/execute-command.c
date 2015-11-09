@@ -600,6 +600,34 @@ fork_and_begin_exec(command_t command, pid_t *proc_table, int index) {
     
 }
 
+void check_dependencies(commandNode_t cNode) {
+    
+    
+    //if no dependencies, just execute
+    if (cNode->dependency_list[0] == NULL) {
+        
+        cNode->dependencies_done = true;
+    }
+    
+    
+    //if there are dependencies, check if theyre done
+    else {
+        
+        int check = 0;
+        while ( cNode->dependency_list[check] != NULL ) {
+            if (cNode->dependency_list[check]->command_tree_done_executing == false) {
+                break;
+            }
+            check++;
+        }
+        
+        if (cNode->dependency_list[check] == NULL)   //dependency list is done
+            cNode->dependencies_done = true;
+
+    }
+
+}
+
 
 int check_blocked_command_dependencies(command_stream_t cstream, pid_t *proc_table, int num_children){
 
@@ -608,18 +636,7 @@ int check_blocked_command_dependencies(command_stream_t cstream, pid_t *proc_tab
     int i=0;
     while ((check_blocked_commands = cstream->blocked_commands[i]) != NULL){
         
-        //Iterate through blocked commands
-        int j=0;
-        while (check_blocked_commands->dependency_list[j] != NULL ) {
-            if (check_blocked_commands->dependency_list[j]->command_tree_done_executing == false) {
-                break;
-            }
-            j++;
-        }
-        
-        if (check_blocked_commands->dependency_list[j] == NULL) {  //dependency list is done
-            check_blocked_commands->dependencies_done = true;
-        }
+        check_dependencies(check_blocked_commands);
         
         if (check_blocked_commands -> dependencies_done == true && check_blocked_commands ->command_tree_done_executing == false && check_blocked_commands->command_tree_begun_executing == false) {
             
@@ -666,51 +683,24 @@ exec_time_travel(command_stream_t cstream) {
         
         else { //this is not the first command
             
-            //check dependency list
+            //check dependency list of cNode
+            check_dependencies(cNode);
             
-            //if no dependencies, just execute
-            if (cNode->dependency_list[0] == NULL) {
-                
-                cNode->dependencies_done = true;
-                
-                //printf("               beginning execution because no dependencies: %d\n", cNode->tree_number);
+            //if dependencies are done, fork and begin execution
+            if (cNode -> dependencies_done == true){
+            
+                //printf("            beginning execution after first attempt of checking depedencies:%d\n", cNode->tree_number);
                 cNode->command_tree_begun_executing=true;
-                fork_and_begin_exec(cNode->cmd, process_table, cNode->tree_number -1);
+                fork_and_begin_exec(cNode->cmd, process_table, cNode ->tree_number -1);
                 number_of_children++;
             }
             
-            
-            //if there are dependencies, check if theyre done
             else {
+                //add to blocked list
+                cstream->blocked_commands[numBlocked] = cNode;
+                numBlocked++;
                 
-                int check = 0;
-                while ( cNode->dependency_list[check] != NULL ) {
-                    if (cNode->dependency_list[check]->command_tree_done_executing == false) {
-                        break;
-                    }
-                    check++;
-                }
-                
-                if (cNode->dependency_list[check] == NULL)   //dependency list is done
-                    cNode->dependencies_done = true;
-                
-                //if dependencies are done, fork and begin execution
-                if (cNode -> dependencies_done == true){
-                    
-                    //printf("            beginning execution after first attempt of checking depedencies:%d\n", cNode->tree_number);
-                    cNode->command_tree_begun_executing=true;
-                    fork_and_begin_exec(cNode->cmd, process_table, cNode ->tree_number -1);
-                    number_of_children++;
-                }
-                
-                else {
-                    //add to blocked list
-                    cstream->blocked_commands[numBlocked] = cNode;
-                    numBlocked++;
-                    
-                }
             }
-            
         }
         
         
