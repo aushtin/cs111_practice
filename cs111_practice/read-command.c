@@ -1102,6 +1102,25 @@ make_command_stream (int (*get_next_byte) (void *),
                 numChars++;
             }
             
+            if (curr == '#') {
+                //add hashtag to buffer
+                buffer[numChars] = '#';
+                numChars++;
+                
+                while (identify_char_type(curr) != NEWLINE_CHAR){
+                    if ((curr = get_next_byte(get_next_byte_argument)) == EOF) {
+                        break;
+                    }
+                }
+                if (curr == EOF)
+                    break;
+
+                //broke out of loop, curr is now a newline char; add to buffer
+                buffer[numChars] = '\n';
+                numChars++;
+                
+            }
+            
             buffer[numChars] = curr;
             numChars++;
             consecutive_newlines = 0;
