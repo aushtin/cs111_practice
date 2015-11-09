@@ -41,9 +41,10 @@ int main (int argc, char **argv) {
     
     int command_number = 1;
     int print_tree = 1;
-    int time_travel = 0;
+    int time_travel = 1;
     program_name = argv[0];
     /*
+
      for (;;)
      switch (getopt (argc, argv, "pt"))
      {

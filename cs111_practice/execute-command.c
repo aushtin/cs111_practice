@@ -747,6 +747,7 @@ exec_time_travel(command_stream_t cstream) {
         //check dependencies in blocked_commands
         number_of_children = check_blocked_command_dependencies(cstream, process_table, number_of_children);
         
+
         cNode = cNode->next;
     }
     
@@ -793,5 +794,6 @@ exec_time_travel(command_stream_t cstream) {
         
         //check dependencies in blocked_commands
         number_of_children = check_blocked_command_dependencies(cstream, process_table, number_of_children);
+
     }
 }
