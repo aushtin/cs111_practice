@@ -222,7 +222,7 @@ commandNode_t createNodeFromCommand(command_t new_command){
     x->dependencies_done = false;
     x->command_tree_begun_executing = false;
     x->dependency_list=checked_malloc(sizeof(commandNode_t));
-
+    
     return x;
 }
 
@@ -612,7 +612,7 @@ void addNodeToStream(command_stream_t cs_stream, commandNode_t new_node) {
     }
     
     cs_stream->num_nodes = cs_stream->num_nodes+1;
-
+    
 }
 
 bool isTokenChar(char character) {
@@ -1003,7 +1003,7 @@ make_command_stream (int (*get_next_byte) (void *),
                     root->write_list = make_write_list(write_list, root->cmd);
                     read_list_t read_list = init_read_list();
                     root->read_list = make_read_list(read_list, root->cmd);
-
+                    
                     root->tree_number=tree_number;
                     
                     root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t)));
@@ -1163,7 +1163,7 @@ make_command_stream (int (*get_next_byte) (void *),
      }
      printf("\n");
      }*/
-     
+    
     
     //make sure buffer_no_whitespace is not empty
     if (buffer_no_whitespaces[0] != '\0') {
@@ -1174,7 +1174,7 @@ make_command_stream (int (*get_next_byte) (void *),
         read_list_t read_list = init_read_list();
         root->read_list = make_read_list(read_list, root->cmd);
         root->tree_number=tree_number;
-
+        
         
         root->dependency_list = (commandNode_t*)(checked_realloc(root->dependency_list, (tree_number) * sizeof(commandNode_t)));
         memset (root -> dependency_list, '\0', (tree_number) * sizeof(commandNode_t));
@@ -1247,4 +1247,3 @@ read_command_stream (command_stream_t s)
     free(to_be_freed);
     return grabbed_command;
 }
-
