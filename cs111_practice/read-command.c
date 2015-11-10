@@ -875,6 +875,8 @@ make_command_stream (int (*get_next_byte) (void *),
     //if this is true, we are searching for the right operand of an operator
     bool found_AND_OR_PIPE_SEQUENCE = false; //looking for operand
     
+    bool found_comment = false;
+    
     //declare command stream and allocate space
     //maybe dont need to allocate space because initStream() already does?
     command_stream_t theStream;    // = (command_stream_t) checked_malloc(sizeof(struct command_stream));
@@ -1036,6 +1038,7 @@ make_command_stream (int (*get_next_byte) (void *),
                         numChars++;
                     } else {
                         //add a hashtag and newline to the buffer
+                        found_comment = true;
                         buffer[numChars] = '#';
                         numChars++;
                         
@@ -1049,6 +1052,7 @@ make_command_stream (int (*get_next_byte) (void *),
                         //now we have a newline; add newline to buffer
                         buffer[numChars]=curr;
                         numChars++;
+                        consecutive_newlines++;
                     }
                     continue;
                 } else { //if we are looking for operand, don't end the commmand
@@ -1075,6 +1079,8 @@ make_command_stream (int (*get_next_byte) (void *),
                         if ((curr = get_next_byte(get_next_byte_argument)) == EOF) {
                             break;
                         }
+                        
+                        
                     }
                     //broken out of while loop, we now have a regular character; add to buffer
                     
@@ -1097,13 +1103,14 @@ make_command_stream (int (*get_next_byte) (void *),
         else {
             
             
-            if (!found_AND_OR_PIPE_SEQUENCE && consecutive_newlines == 1) {
+            if (!found_AND_OR_PIPE_SEQUENCE && consecutive_newlines == 1 && buffer[numChars-2] != '#') {
                 buffer[numChars] = ';';
                 numChars++;
             }
             
             if (curr == '#') {
                 //add hashtag to buffer
+                found_comment=true;
                 buffer[numChars] = '#';
                 numChars++;
                 
@@ -1118,12 +1125,16 @@ make_command_stream (int (*get_next_byte) (void *),
                 //broke out of loop, curr is now a newline char; add to buffer
                 buffer[numChars] = '\n';
                 numChars++;
+                consecutive_newlines++;
+                continue;
                 
             }
             
+            found_comment=false;
             buffer[numChars] = curr;
             numChars++;
-            consecutive_newlines = 0;
+            if (found_comment==false)
+                consecutive_newlines = 0;
             
             //if we are here we no longer skip lines
             found_AND_OR_PIPE_SEQUENCE = false;
