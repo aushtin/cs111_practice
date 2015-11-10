@@ -684,7 +684,7 @@ void eatWhiteSpaces(char *buffer, int bufferSize, char *newArray){
                     newArrayPos++;
                     foundWord=false;
                 } else if (identify_char_type(buffer[i])==NEWLINE_CHAR){
-                    
+                    //i++;
                 } else if (identify_char_type(buffer[i])==HASHTAG_CHAR){
                     i++;
                 }
@@ -870,7 +870,6 @@ make_command_stream (int (*get_next_byte) (void *),
     //if this is true, we are searching for the right operand of an operator
     bool found_AND_OR_PIPE_SEQUENCE = false; //looking for operand
     
-    bool found_comment = false;
     
     //declare command stream and allocate space
     //maybe dont need to allocate space because initStream() already does?
@@ -884,7 +883,7 @@ make_command_stream (int (*get_next_byte) (void *),
         
         if (numChars > 0){
             //only stores previous meaningful character, i.e. not whitespace
-            if (buffer[numChars-1] != ' ' && buffer[numChars-1] != '#'){
+            if ((buffer[numChars-1] != ' ' && buffer[numChars-1] != '#')){
                 prev_char_stored = buffer[numChars-1];
             }
         }
@@ -906,20 +905,21 @@ make_command_stream (int (*get_next_byte) (void *),
          bool command_has_ended; //haven't needed to use yet
          
          */
-        if (identify_char_type(curr) == NEWLINE_CHAR){
+        if (identify_char_type(curr) == NEWLINE_CHAR || identify_char_type(curr) == HASHTAG_CHAR){
             
             //found a newline, increment counter
             consecutive_newlines++;
             
             //hit second (or more) newline
             if (consecutive_newlines > 1){
-                //not looking for an operator
+                //not looking for an operator and
                 if (!found_AND_OR_PIPE_SEQUENCE){
+                    if (identify_char_type(curr) == NEWLINE_CHAR) {
                     //add second newline to buffer
                     buffer[numChars] = '\n';
                     numChars++;
                     curr = get_next_byte(get_next_byte_argument);
-                    
+                    }
                     /*
                      check for newlines, whitespaces, and hashtags after second newline
                      Store newlines on the buffer, ignore white spaces, and for hashtags:
@@ -931,6 +931,7 @@ make_command_stream (int (*get_next_byte) (void *),
                             numChars++;
                         } else if (curr == '#'){
                             //add hashtag to buffer
+                            consecutive_newlines++;
                             buffer[numChars] = '#';
                             numChars++;
                             
@@ -943,6 +944,7 @@ make_command_stream (int (*get_next_byte) (void *),
                             //broke out of loop, curr is now a newline char; add to buffer
                             buffer[numChars] = '\n';
                             numChars++;
+                            
                         }
                         
                         if ((curr = get_next_byte(get_next_byte_argument)) == EOF) {
@@ -1033,7 +1035,6 @@ make_command_stream (int (*get_next_byte) (void *),
                         numChars++;
                     } else {
                         //add a hashtag and newline to the buffer
-                        found_comment = true;
                         buffer[numChars] = '#';
                         numChars++;
                         
@@ -1090,6 +1091,17 @@ make_command_stream (int (*get_next_byte) (void *),
                 }
             } else {
                 //add newline to buffer; this is when number of newlines equals one
+                if (identify_char_type(curr) == HASHTAG_CHAR) {
+                    buffer[numChars] = '#';
+                    numChars++;
+                    
+                    while (identify_char_type(curr) != NEWLINE_CHAR){
+                        if ((curr = get_next_byte(get_next_byte_argument)) == EOF) {
+                            break;
+                        }
+                    }
+                    
+                }
                 buffer[numChars] = '\n';
                 numChars++;
                 continue;
@@ -1098,38 +1110,14 @@ make_command_stream (int (*get_next_byte) (void *),
         else {
             
             
-            if (!found_AND_OR_PIPE_SEQUENCE && consecutive_newlines == 1 && buffer[numChars-2] != '#') {
+            if (!found_AND_OR_PIPE_SEQUENCE && consecutive_newlines == 1) {
                 buffer[numChars] = ';';
                 numChars++;
             }
             
-            if (curr == '#') {
-                //add hashtag to buffer
-                found_comment=true;
-                buffer[numChars] = '#';
-                numChars++;
-                
-                while (identify_char_type(curr) != NEWLINE_CHAR){
-                    if ((curr = get_next_byte(get_next_byte_argument)) == EOF) {
-                        break;
-                    }
-                }
-                if (curr == EOF)
-                    break;
-
-                //broke out of loop, curr is now a newline char; add to buffer
-                buffer[numChars] = '\n';
-                numChars++;
-                consecutive_newlines++;
-                continue;
-                
-            }
-            
-            found_comment=false;
             buffer[numChars] = curr;
             numChars++;
-            if (found_comment==false)
-                consecutive_newlines = 0;
+            consecutive_newlines = 0;
             
             //if we are here we no longer skip lines
             found_AND_OR_PIPE_SEQUENCE = false;

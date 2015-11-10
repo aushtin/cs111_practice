@@ -78,8 +78,9 @@ int main (int argc, char **argv) {
             //printf ("# %d\n", command_number++);
             //print_command (command);
             
-            //free_command(command);
+
             execute_command(command, 0);
+            free_command(command);
             
         }
     }
